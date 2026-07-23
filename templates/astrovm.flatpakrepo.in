@@ -1,0 +1,9 @@
+[Flatpak Repo]
+Version=1
+Title=astrovm Flatpak Repository
+Comment=Official Flatpak applications published by astrovm
+Description=Install and update applications published by astrovm.
+Homepage=https://4st.li/
+Url=https://flatpak.4st.li/repo/
+DefaultBranch=master
+GPGKey=@GPG_KEY@
