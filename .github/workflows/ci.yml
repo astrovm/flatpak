@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install validation tools
+        run: |
+          sudo apt update
+          sudo apt install -y python3-yaml shellcheck
+
+      - name: Validate shell scripts
+        run: |
+          bash -n scripts/*.sh
+          shellcheck scripts/*.sh
+
+      - name: Validate workflow YAML
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in Path(".github/workflows").glob("*.yml"):
+              with path.open(encoding="utf-8") as file:
+                  yaml.safe_load(file)
+              print(f"validated {path}")
+          PY

@@ -1,0 +1,100 @@
+name: Publish Flatpak repository
+
+on:
+  repository_dispatch:
+    types: [publish-app]
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository containing the GitHub release
+        required: true
+        default: astrovm/AdventureMods
+      tag:
+        description: Release tag containing the Flatpak bundles
+        required: true
+
+concurrency:
+  group: flatpak-repository
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install publishing tools
+        run: |
+          sudo apt update
+          sudo apt install -y flatpak gnupg ostree
+
+      - name: Resolve publication request
+        id: request
+        env:
+          DISPATCH_REPOSITORY: ${{ github.event.client_payload.repository }}
+          DISPATCH_TAG: ${{ github.event.client_payload.tag }}
+          MANUAL_REPOSITORY: ${{ inputs.repository }}
+          MANUAL_TAG: ${{ inputs.tag }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "repository_dispatch" ]; then
+            repository=$DISPATCH_REPOSITORY
+            tag=$DISPATCH_TAG
+          else
+            repository=$MANUAL_REPOSITORY
+            tag=$MANUAL_TAG
+          fi
+
+          if [ -z "$repository" ] || [ -z "$tag" ]; then
+            echo "::error::Repository and tag are required"
+            exit 1
+          fi
+
+          echo "repository=$repository" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare publishing branch
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            git worktree add -B gh-pages site origin/gh-pages
+          else
+            git worktree add --detach site
+            git -C site switch --orphan gh-pages
+            git -C site rm -rf . >/dev/null 2>&1 || true
+          fi
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+        run: |
+          scripts/publish.sh \
+            "${{ steps.request.outputs.repository }}" \
+            "${{ steps.request.outputs.tag }}" \
+            site \
+            "$RUNNER_TEMP/flatpak-bundles"
+
+      - name: Commit repository
+        env:
+          SOURCE_REPOSITORY: ${{ steps.request.outputs.repository }}
+          SOURCE_TAG: ${{ steps.request.outputs.tag }}
+        run: |
+          git -C site config user.name "github-actions[bot]"
+          git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C site add --all
+
+          if git -C site diff --cached --quiet; then
+            echo "::notice::The Flatpak repository is already up to date"
+            exit 0
+          fi
+
+          tree=$(git -C site write-tree)
+          commit=$(printf 'Publish %s %s\n' "$SOURCE_REPOSITORY" "$SOURCE_TAG" | git -C site commit-tree "$tree")
+          git -C site push --force origin "$commit:refs/heads/gh-pages"
