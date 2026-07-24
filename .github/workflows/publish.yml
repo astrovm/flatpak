@@ -10,8 +10,8 @@ on:
         required: true
         default: astrovm/AdventureMods
       tag:
-        description: Release tag containing the Flatpak bundles
-        required: true
+        description: Release tag containing the Flatpak bundles (defaults to latest)
+        required: false
 
 concurrency:
   group: flatpak-repository
@@ -37,6 +37,7 @@ jobs:
       - name: Resolve publication request
         id: request
         env:
+          GH_TOKEN: ${{ github.token }}
           DISPATCH_REPOSITORY: ${{ github.event.client_payload.repository }}
           DISPATCH_TAG: ${{ github.event.client_payload.tag }}
           MANUAL_REPOSITORY: ${{ inputs.repository }}
@@ -50,9 +51,14 @@ jobs:
             tag=$MANUAL_TAG
           fi
 
-          if [ -z "$repository" ] || [ -z "$tag" ]; then
-            echo "::error::Repository and tag are required"
+          if [ -z "$repository" ]; then
+            echo "::error::Repository is required"
             exit 1
+          fi
+
+          if [ -z "$tag" ]; then
+            tag=$(gh release view --repo "$repository" --json tagName --jq .tagName)
+            echo "::notice::No tag provided; using latest release $tag"
           fi
 
           echo "repository=$repository" >> "$GITHUB_OUTPUT"
