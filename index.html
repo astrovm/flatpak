@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>astrovm Flatpak Repository</title>
+  </head>
+  <body>
+    <main>
+      <h1>astrovm Flatpak Repository</h1>
+      <p>Official Flatpak applications published by astrovm.</p>
+      <p>
+        <a href="/apps/io.github.astrovm.AdventureMods/install/">
+          Install Adventure Mods
+        </a>
+      </p>
+      <p>
+        <a href="io.github.astrovm.AdventureMods.flatpakref">Download the installer file</a>
+        if the install link does not open.
+      </p>
+      <details>
+        <summary>Manual repository setup</summary>
+        <pre><code>flatpak remote-add --if-not-exists --user astrovm https://flatpak.4st.li/astrovm.flatpakrepo
+flatpak install --user astrovm io.github.astrovm.AdventureMods</code></pre>
+      </details>
+    </main>
+  </body>
+</html>
