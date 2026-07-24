@@ -61,6 +61,19 @@ if [ ! -f "$repository_directory/config" ]; then
   ostree init --repo="$repository_directory" --mode=archive-z2
 fi
 
+# Git does not track empty directories. A previously published OSTree repo on
+# gh-pages therefore often lacks empty refs/{remotes,mirrors} (and similar)
+# paths after checkout. flatpak build-update-repo --generate-static-deltas
+# fails with: Listing refs: opendir(refs/remotes): No such file or directory
+mkdir -p \
+  "$repository_directory/extensions" \
+  "$repository_directory/objects" \
+  "$repository_directory/refs/heads" \
+  "$repository_directory/refs/mirrors" \
+  "$repository_directory/refs/remotes" \
+  "$repository_directory/state" \
+  "$repository_directory/tmp"
+
 for bundle in "${bundles[@]}"; do
   echo "Importing $(basename "$bundle")"
   flatpak build-import-bundle \
