@@ -106,6 +106,9 @@ fi
 sed "s|@GPG_KEY@|$public_key|" \
   templates/astrovm.flatpakrepo.in \
   > "$output_directory/astrovm.flatpakrepo"
+sed "s|@GPG_KEY@|$public_key|" \
+  templates/io.github.astrovm.AdventureMods.flatpakref.in \
+  > "$output_directory/io.github.astrovm.AdventureMods.flatpakref"
 cp templates/index.html "$output_directory/index.html"
 printf '%s\n' 'flatpak.4st.li' > "$output_directory/CNAME"
 touch "$output_directory/.nojekyll"
