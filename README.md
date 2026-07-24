@@ -9,8 +9,7 @@ The repository is served from `https://flatpak.4st.li/` and currently publishes 
 [Install Adventure Mods](https://flatpak.4st.li/apps/io.github.astrovm.AdventureMods/install/), or use the terminal:
 
 ```sh
-flatpak install --user \
-  https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref
+flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref
 ```
 
 Updates are installed through the normal Flatpak update flow:
@@ -23,10 +22,9 @@ flatpak update
 <summary>Manual repository setup</summary>
 
 ```sh
-flatpak remote-add --if-not-exists --user astrovm \
-  https://flatpak.4st.li/astrovm.flatpakrepo
+flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo
 
-flatpak install --user astrovm io.github.astrovm.AdventureMods
+flatpak install astrovm io.github.astrovm.AdventureMods
 ```
 
 </details>
