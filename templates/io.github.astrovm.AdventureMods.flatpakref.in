@@ -1,0 +1,11 @@
+[Flatpak Ref]
+Version=1
+Name=io.github.astrovm.AdventureMods
+Branch=master
+Title=Adventure Mods
+Comment=The easiest way to mod Sonic Adventure on Linux
+IsRuntime=false
+Url=https://flatpak.4st.li/repo/
+RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+SuggestRemoteName=astrovm
+GPGKey=@GPG_KEY@
