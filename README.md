@@ -84,4 +84,4 @@ The workflow also writes `.nojekyll` and `CNAME` to the publishing branch.
 
 ## Manual publication
 
-The workflow can also be run manually from the Actions tab. Supply the source repository and release tag. Only repositories explicitly allowed by `scripts/publish.sh` can be published.
+The workflow can also be run manually from the Actions tab. Supply the source repository and optionally a release tag; when omitted, the latest published release is used. Only repositories explicitly allowed by `scripts/publish.sh` can be published.
