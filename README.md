@@ -6,7 +6,7 @@ The repository is served from `https://flatpak.4st.li/` and currently publishes 
 
 ## Install
 
-Install Adventure Mods directly from its Flatpak reference:
+[Install Adventure Mods](https://flatpak.4st.li/apps/io.github.astrovm.AdventureMods/install/), or use the terminal:
 
 ```sh
 flatpak install --user \
@@ -52,7 +52,7 @@ The publishing workflow:
 3. imports them into the persistent OSTree repository on `gh-pages`;
 4. signs commits and repository metadata with the dedicated Flatpak GPG key;
 5. generates static deltas and keeps the three previous revisions of each ref;
-6. generates the repository file, Adventure Mods installer file, landing page, and custom-domain files;
+6. generates the repository file, Adventure Mods installer and install pages, landing page, and custom-domain files;
 7. replaces `gh-pages` with one generated snapshot of the updated repository.
 
 The publishing branch is intentionally rewritten on each update. This preserves the current OSTree repository and its retained revisions without keeping pruned objects forever in Git history.
