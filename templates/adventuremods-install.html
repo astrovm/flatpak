@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Install Adventure Mods</title>
+  </head>
+  <body>
+    <main>
+      <h1>Install Adventure Mods</h1>
+      <p>Opening your software manager...</p>
+      <p>
+        <a id="install-link" href="flatpak+https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref">
+          Open in software manager
+        </a>
+      </p>
+      <p>
+        If nothing happens,
+        <a href="/io.github.astrovm.AdventureMods.flatpakref">download the installer file</a>.
+      </p>
+    </main>
+    <script>
+      window.location.replace(document.getElementById("install-link").href);
+    </script>
+  </body>
+</html>

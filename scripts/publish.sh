@@ -110,5 +110,8 @@ sed "s|@GPG_KEY@|$public_key|" \
   templates/io.github.astrovm.AdventureMods.flatpakref.in \
   > "$output_directory/io.github.astrovm.AdventureMods.flatpakref"
 cp templates/index.html "$output_directory/index.html"
+install_directory="$output_directory/apps/io.github.astrovm.AdventureMods/install"
+mkdir -p "$install_directory"
+cp templates/adventuremods-install.html "$install_directory/index.html"
 printf '%s\n' 'flatpak.4st.li' > "$output_directory/CNAME"
 touch "$output_directory/.nojekyll"
