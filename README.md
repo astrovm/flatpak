@@ -6,11 +6,11 @@ The repository is served from `https://flatpak.4st.li/` and currently publishes 
 
 ## Install
 
-```sh
-flatpak remote-add --if-not-exists --user astrovm \
-  https://flatpak.4st.li/astrovm.flatpakrepo
+Install Adventure Mods directly from its Flatpak reference:
 
-flatpak install --user astrovm io.github.astrovm.AdventureMods
+```sh
+flatpak install --user \
+  https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref
 ```
 
 Updates are installed through the normal Flatpak update flow:
@@ -18,6 +18,18 @@ Updates are installed through the normal Flatpak update flow:
 ```sh
 flatpak update
 ```
+
+<details>
+<summary>Manual repository setup</summary>
+
+```sh
+flatpak remote-add --if-not-exists --user astrovm \
+  https://flatpak.4st.li/astrovm.flatpakrepo
+
+flatpak install --user astrovm io.github.astrovm.AdventureMods
+```
+
+</details>
 
 ## Publishing
 
@@ -40,7 +52,7 @@ The publishing workflow:
 3. imports them into the persistent OSTree repository on `gh-pages`;
 4. signs commits and repository metadata with the dedicated Flatpak GPG key;
 5. generates static deltas and keeps the three previous revisions of each ref;
-6. updates `astrovm.flatpakrepo`, the repository landing page, and the custom-domain files;
+6. generates the repository file, Adventure Mods installer file, landing page, and custom-domain files;
 7. replaces `gh-pages` with one generated snapshot of the updated repository.
 
 The publishing branch is intentionally rewritten on each update. This preserves the current OSTree repository and its retained revisions without keeping pruned objects forever in Git history.
@@ -54,7 +66,7 @@ Configure these repository secrets before publishing:
 - `FLATPAK_GPG_PRIVATE_KEY`: ASCII-armored private key for a dedicated, unencrypted signing key.
 - `FLATPAK_GPG_KEY_ID`: full fingerprint of that key.
 
-The private key is imported only into a temporary GnuPG home on the runner. The generated `.flatpakrepo` file contains only the public key.
+The private key is imported only into a temporary GnuPG home on the runner. The generated `.flatpakrepo` and `.flatpakref` files contain only the public key.
 
 In the Adventure Mods repository, create `FLATPAK_REPO_TOKEN` from a fine-grained personal access token scoped only to `astrovm/flatpak` with **Contents: Read and write**. GitHub requires that permission for repository dispatch events.
 
