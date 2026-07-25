@@ -31,42 +31,48 @@ flatpak install astrovm io.github.astrovm.AdventureMods
 
 ## Publishing
 
-Application repositories publish signed `.flatpak` bundles in a GitHub release and send a `publish-app` repository dispatch containing:
+Application repositories publish signed `.flatpak` bundles in a GitHub release
+and send a `publish-app` repository dispatch:
 
 ```json
 {
   "event_type": "publish-app",
   "client_payload": {
     "repository": "astrovm/AdventureMods",
-    "tag": "v0.3.10"
+    "tag": "v0.3.12"
   }
 }
 ```
 
 The publishing workflow:
 
-1. validates the source repository and release tag;
-2. downloads all `.flatpak` assets from the release;
-3. imports them into the persistent OSTree repository on `gh-pages`;
-4. signs commits and repository metadata with the dedicated Flatpak GPG key;
-5. generates static deltas and keeps the three previous revisions of each ref;
-6. generates the repository file, Adventure Mods installer and install pages, landing page, and custom-domain files;
-7. replaces `gh-pages` with one generated snapshot of the updated repository.
+1. validates the request and immutable GitHub release;
+2. verifies both bundle digests, architectures, and application refs;
+3. imports and signs the bundles;
+4. generates deltas, metadata, and installer pages;
+5. verifies the finished repository with a fresh Flatpak client;
+6. replaces `gh-pages` with the generated snapshot.
 
-The publishing branch is intentionally rewritten on each update. This preserves the current OSTree repository and its retained revisions without keeping pruned objects forever in Git history.
-
-Repeated dispatches for the same release are safe. If nothing changes, the workflow exits without creating another commit.
+Repeated dispatches for the same release are safe. If nothing changes, the
+workflow exits without creating another commit. A daily health workflow also
+checks the live metadata and both published architectures.
 
 ## Required secrets
 
-Configure these repository secrets before publishing:
+Configure these secrets in the `flatpak-signing` GitHub environment:
 
-- `FLATPAK_GPG_PRIVATE_KEY`: ASCII-armored private key for a dedicated, unencrypted signing key.
+- `FLATPAK_GPG_PRIVATE_KEY`: ASCII-armored private key for the dedicated
+  unencrypted signing key.
 - `FLATPAK_GPG_KEY_ID`: full fingerprint of that key.
 
-The private key is imported only into a temporary GnuPG home on the runner. The generated `.flatpakrepo` and `.flatpakref` files contain only the public key.
+The private key is imported only into a temporary GnuPG home. Generated
+installer files contain only the public key.
 
-In the Adventure Mods repository, create `FLATPAK_REPO_TOKEN` from a fine-grained personal access token scoped only to `astrovm/flatpak` with **Contents: Read and write**. GitHub requires that permission for repository dispatch events.
+The environment can optionally require reviewers when every repository
+publication should have a human approval.
+
+In Adventure Mods, configure `FLATPAK_REPO_TOKEN` as a fine-grained token scoped
+only to `astrovm/flatpak` with **Contents: Read and write**.
 
 ## GitHub Pages setup
 
@@ -82,4 +88,52 @@ The workflow also writes `.nojekyll` and `CNAME` to the publishing branch.
 
 ## Manual publication
 
-The workflow can also be run manually from the Actions tab. Supply the source repository and optionally a release tag; when omitted, the latest published release is used. Only repositories explicitly allowed by `scripts/publish.sh` can be published.
+The workflow can also be run manually:
+
+```sh
+gh workflow run publish.yml \
+  --repo astrovm/flatpak \
+  --field repository=astrovm/AdventureMods \
+  --field tag=v0.3.12
+```
+
+Omit `tag` to publish the latest release. Only repositories explicitly allowed
+by `scripts/publish.sh` can be published.
+
+## Recovery
+
+If publication fails, fix the release or this repository and rerun the
+workflow. Immutable releases cannot be edited, so incorrect assets require a
+new release tag. Do not bypass digest, ref, OSTree, or Flatpak verification.
+
+To roll back Adventure Mods, run the workflow with the last known-good release
+tag. Each `gh-pages` commit also records the previous snapshot commit:
+
+```sh
+git fetch origin gh-pages
+git show --no-patch origin/gh-pages
+git push --force origin <previous-snapshot-commit>:gh-pages
+```
+
+Use the exact commit shown as `Previous snapshot`.
+
+## Signing-key recovery
+
+Flatpak clients trust the configured repository key. Replacing it without
+updating clients prevents future updates.
+
+If the signing key is lost or compromised:
+
+1. Pause publication and remove the compromised secret.
+2. Create a dedicated replacement key.
+3. Update `FLATPAK_GPG_PRIVATE_KEY` and `FLATPAK_GPG_KEY_ID`.
+4. Publish the current release.
+5. Ask existing users to import the replacement public key:
+
+   ```sh
+   curl --fail --output astrovm.gpg https://flatpak.4st.li/astrovm.gpg
+   flatpak remote-modify --gpg-import=astrovm.gpg astrovm
+   ```
+
+Keep an encrypted offline backup of the signing key. Never store a private key
+in this repository, workflow logs, release assets, or artifacts.
