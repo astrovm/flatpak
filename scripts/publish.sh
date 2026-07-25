@@ -140,6 +140,7 @@ sed "s|@GPG_KEY@|$public_key|" \
   > "$output_directory/io.github.astrovm.AdventureMods.flatpakref"
 cp "$public_key_file" "$output_directory/astrovm.gpg"
 cp "$repository_root/templates/index.html" "$output_directory/index.html"
+cp "$repository_root/templates/styles.css" "$output_directory/styles.css"
 install_directory="$output_directory/apps/io.github.astrovm.AdventureMods/install"
 mkdir -p "$install_directory"
 cp "$repository_root/templates/adventuremods-install.html" "$install_directory/index.html"

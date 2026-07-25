@@ -20,6 +20,7 @@ for path in \
   "$repository_directory/summary.sig" \
   "$site_directory/astrovm.gpg" \
   "$repository_file" \
+  "$site_directory/styles.css" \
   "$site_directory/io.github.astrovm.AdventureMods.flatpakref"; do
   if [ ! -s "$path" ]; then
     error "Generated repository file is missing or empty: $path"
