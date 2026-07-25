@@ -106,16 +106,8 @@ If publication fails, fix the release or this repository and rerun the
 workflow. Immutable releases cannot be edited, so incorrect assets require a
 new release tag. Do not bypass digest, ref, OSTree, or Flatpak verification.
 
-To roll back Adventure Mods, run the workflow with the last known-good release
-tag. Each `gh-pages` commit also records the previous snapshot commit:
-
-```sh
-git fetch origin gh-pages
-git show --no-patch origin/gh-pages
-git push --force origin <previous-snapshot-commit>:gh-pages
-```
-
-Use the exact commit shown as `Previous snapshot`.
+To roll back Adventure Mods, run the workflow with the last known-good immutable
+release tag.
 
 ## Signing-key recovery
 

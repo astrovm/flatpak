@@ -47,14 +47,11 @@ jobs:
           scripts/resolve-request.sh "$GITHUB_EVENT_NAME" "$GITHUB_OUTPUT"
 
       - name: Prepare publishing branch
-        id: publishing-branch
         run: |
           if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
             git fetch origin gh-pages:refs/remotes/origin/gh-pages
-            echo "previous_commit=$(git rev-parse origin/gh-pages)" >> "$GITHUB_OUTPUT"
             git worktree add -B gh-pages site origin/gh-pages
           else
-            echo "previous_commit=none" >> "$GITHUB_OUTPUT"
             git worktree add --detach site
             git -C site switch --orphan gh-pages
             git -C site rm -rf . >/dev/null 2>&1 || true
@@ -75,7 +72,6 @@ jobs:
 
       - name: Commit repository
         env:
-          PREVIOUS_COMMIT: ${{ steps.publishing-branch.outputs.previous_commit }}
           SOURCE_REPOSITORY: ${{ steps.request.outputs.repository }}
           SOURCE_TAG: ${{ steps.request.outputs.tag }}
         run: |
@@ -89,11 +85,5 @@ jobs:
           fi
 
           tree=$(git -C site write-tree)
-          commit=$(
-            printf 'Publish %s %s\n\nPrevious snapshot: %s\n' \
-              "$SOURCE_REPOSITORY" \
-              "$SOURCE_TAG" \
-              "$PREVIOUS_COMMIT" |
-              git -C site commit-tree "$tree"
-          )
+          commit=$(printf 'Publish %s %s\n' "$SOURCE_REPOSITORY" "$SOURCE_TAG" | git -C site commit-tree "$tree")
           git -C site push --force origin "$commit:refs/heads/gh-pages"

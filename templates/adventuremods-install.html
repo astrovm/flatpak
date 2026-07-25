@@ -4,22 +4,42 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Install Adventure Mods</title>
+    <meta
+      name="description"
+      content="Open Adventure Mods in your Flatpak-compatible software manager."
+    >
+    <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main>
-      <h1>Install Adventure Mods</h1>
-      <p>Opening your software manager...</p>
-      <p>
-        <a id="install-link" href="flatpak+https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref">
-          Open in software manager
-        </a>
-      </p>
-      <p>
-        If nothing happens,
-        <a href="/io.github.astrovm.AdventureMods.flatpakref">download the installer file</a>,
-        or install from a terminal:
-      </p>
-      <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
+    <main class="page install-page">
+      <section class="card install-card">
+        <p class="status">Installer ready</p>
+        <h1>Opening your software manager</h1>
+        <p class="lede">
+          Your desktop should ask for confirmation before installing Adventure
+          Mods from the astrovm repository.
+        </p>
+        <div class="actions">
+          <a
+            id="install-link"
+            class="button button-primary"
+            href="flatpak+https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref"
+          >
+            Open software manager
+          </a>
+          <a class="button" href="/">
+            Back to repository
+          </a>
+        </div>
+        <p class="fallback">
+          Nothing happened?
+          <a href="/io.github.astrovm.AdventureMods.flatpakref">
+            Download the installer
+          </a>
+          or run:
+        </p>
+        <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
+      </section>
     </main>
     <script>
       window.location.replace(document.getElementById("install-link").href);
