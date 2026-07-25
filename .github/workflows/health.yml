@@ -1,0 +1,53 @@
+name: Check published repository
+
+on:
+  schedule:
+    - cron: "17 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Install Flatpak
+        run: |
+          sudo apt update
+          sudo apt install -y flatpak
+
+      - name: Check live repository
+        run: |
+          set -euo pipefail
+
+          curl --fail --silent --show-error https://flatpak.4st.li/ >/dev/null
+          curl --fail --silent --show-error https://flatpak.4st.li/astrovm.flatpakrepo >/dev/null
+          curl --fail --silent --show-error https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref >/dev/null
+
+          client_directory=$(mktemp -d "$RUNNER_TEMP/flatpak-client.XXXXXX")
+          trap 'rm -rf -- "$client_directory"' EXIT
+          export XDG_CACHE_HOME=$client_directory/cache
+          export XDG_DATA_HOME=$client_directory/data
+          mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+
+          flatpak remote-add \
+            --user \
+            --if-not-exists \
+            astrovm \
+            https://flatpak.4st.li/astrovm.flatpakrepo
+
+          for arch in aarch64 x86_64; do
+            expected="app/io.github.astrovm.AdventureMods/$arch/master"
+            actual=$(flatpak remote-ls \
+              --user \
+              --arch="$arch" \
+              --columns=ref \
+              astrovm)
+
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::Expected $expected, received: ${actual:-nothing}"
+              exit 1
+            fi
+          done

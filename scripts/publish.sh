@@ -1,59 +1,57 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -ne 4 ]; then
-  echo "usage: $0 <source-repository> <release-tag> <output-directory> <bundles-directory>" >&2
+script_directory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repository_root=$(realpath -- "$script_directory/..")
+# shellcheck source=scripts/lib/publish-common.sh
+source "$script_directory/lib/publish-common.sh"
+
+if [ "$#" -ne 3 ]; then
+  echo "usage: $0 <source-repository> <release-tag> <output-directory>" >&2
   exit 2
 fi
 
 source_repository=$1
 release_tag=$2
-output_directory=$3
-bundles_directory=$4
+output_directory=$(realpath --canonicalize-missing -- "$3")
 
-case "$source_repository" in
-  astrovm/AdventureMods)
-    ;;
-  *)
-    echo "::error::Publishing from $source_repository is not allowed" >&2
-    exit 1
-    ;;
-esac
-
-if [[ ! "$release_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-  echo "::error::Invalid release tag: $release_tag" >&2
-  exit 1
-fi
+validate_source_repository "$source_repository"
+validate_release_tag "$release_tag"
+validate_output_directory "$output_directory" "$repository_root"
 
 if [ -z "${GH_TOKEN:-}" ]; then
-  echo "::error::GH_TOKEN is required" >&2
+  error "GH_TOKEN is required"
   exit 1
 fi
 
 if [ -z "${FLATPAK_GPG_PRIVATE_KEY:-}" ] || [ -z "${FLATPAK_GPG_KEY_ID:-}" ]; then
-  echo "::error::FLATPAK_GPG_PRIVATE_KEY and FLATPAK_GPG_KEY_ID must be configured" >&2
+  error "FLATPAK_GPG_PRIVATE_KEY and FLATPAK_GPG_KEY_ID must be configured"
   exit 1
 fi
 
-gnupg_home=${GNUPGHOME:-"$RUNNER_TEMP/flatpak-gnupg"}
+temporary_root=${RUNNER_TEMP:-${TMPDIR:-/tmp}}
+working_directory=$(mktemp -d "$temporary_root/flatpak-publish.XXXXXX")
+trap 'rm -rf -- "$working_directory"' EXIT
+
+bundles_directory=$working_directory/bundles
+gnupg_home=$working_directory/gnupg
+release_metadata=$working_directory/release.json
+
+mkdir -p "$bundles_directory"
 mkdir -p "$gnupg_home"
 chmod 700 "$gnupg_home"
 printf '%s\n' "$FLATPAK_GPG_PRIVATE_KEY" | gpg --batch --homedir "$gnupg_home" --import
 gpg --batch --homedir "$gnupg_home" --list-secret-keys "$FLATPAK_GPG_KEY_ID" >/dev/null
 
-rm -rf "$bundles_directory"
-mkdir -p "$bundles_directory"
-gh release view "$release_tag" --repo "$source_repository" >/dev/null
+gh api "repos/$source_repository/releases/tags/$release_tag" > "$release_metadata"
+validate_release_metadata "$release_metadata" "$release_tag"
+
 gh release download "$release_tag" \
   --repo "$source_repository" \
   --pattern '*.flatpak' \
   --dir "$bundles_directory"
 
-mapfile -d '' bundles < <(find "$bundles_directory" -maxdepth 1 -type f -name '*.flatpak' -print0 | sort -z)
-if [ "${#bundles[@]}" -eq 0 ]; then
-  echo "::error::Release $source_repository $release_tag contains no Flatpak bundles" >&2
-  exit 1
-fi
+validate_downloaded_bundles "$release_metadata" "$bundles_directory"
 
 mkdir -p "$output_directory"
 repository_directory=$output_directory/repo
@@ -74,8 +72,26 @@ mkdir -p \
   "$repository_directory/state" \
   "$repository_directory/tmp"
 
-for bundle in "${bundles[@]}"; do
-  echo "Importing $(basename "$bundle")"
+ostree fsck --quiet --repo="$repository_directory"
+
+for arch in "${EXPECTED_ARCHES[@]}"; do
+  bundle=$bundles_directory/$(expected_bundle_name "$arch")
+  expected=$(expected_ref "$arch")
+  inspection_repository=$working_directory/inspect-$arch
+
+  ostree init --repo="$inspection_repository" --mode=archive-z2
+  flatpak build-import-bundle \
+    --no-update-summary \
+    "$inspection_repository" \
+    "$bundle"
+
+  mapfile -t imported_refs < <(ostree refs --repo="$inspection_repository")
+  if [ "${#imported_refs[@]}" -ne 1 ] || [ "${imported_refs[0]}" != "$expected" ]; then
+    error "$(basename "$bundle") contains an unexpected ref: ${imported_refs[*]:-none}"
+    exit 1
+  fi
+
+  echo "Importing $(basename "$bundle") as $expected"
   flatpak build-import-bundle \
     --no-update-summary \
     --gpg-sign="$FLATPAK_GPG_KEY_ID" \
@@ -97,21 +113,37 @@ flatpak build-update-repo \
   --prune-depth=3 \
   "$repository_directory"
 
-public_key=$(gpg --batch --homedir "$gnupg_home" --export "$FLATPAK_GPG_KEY_ID" | base64 --wrap=0)
+validate_repository_refs "$repository_directory"
+
+public_key_file=$working_directory/astrovm.gpg
+gpg --batch --homedir "$gnupg_home" --export "$FLATPAK_GPG_KEY_ID" > "$public_key_file"
+public_key=$(base64 --wrap=0 "$public_key_file")
 if [ -z "$public_key" ]; then
-  echo "::error::Failed to export the Flatpak repository public key" >&2
+  error "Failed to export the Flatpak repository public key"
   exit 1
 fi
 
+# Keep the publishing branch as one generated snapshot while preserving its
+# Git worktree metadata and persistent OSTree repository.
+find "$output_directory" \
+  -mindepth 1 \
+  -maxdepth 1 \
+  ! -name .git \
+  ! -name repo \
+  -exec rm -rf -- {} +
+
 sed "s|@GPG_KEY@|$public_key|" \
-  templates/astrovm.flatpakrepo.in \
+  "$repository_root/templates/astrovm.flatpakrepo.in" \
   > "$output_directory/astrovm.flatpakrepo"
 sed "s|@GPG_KEY@|$public_key|" \
-  templates/io.github.astrovm.AdventureMods.flatpakref.in \
+  "$repository_root/templates/io.github.astrovm.AdventureMods.flatpakref.in" \
   > "$output_directory/io.github.astrovm.AdventureMods.flatpakref"
-cp templates/index.html "$output_directory/index.html"
+cp "$public_key_file" "$output_directory/astrovm.gpg"
+cp "$repository_root/templates/index.html" "$output_directory/index.html"
 install_directory="$output_directory/apps/io.github.astrovm.AdventureMods/install"
 mkdir -p "$install_directory"
-cp templates/adventuremods-install.html "$install_directory/index.html"
+cp "$repository_root/templates/adventuremods-install.html" "$install_directory/index.html"
 printf '%s\n' 'flatpak.4st.li' > "$output_directory/CNAME"
 touch "$output_directory/.nojekyll"
+
+"$script_directory/verify-repository.sh" "$output_directory"

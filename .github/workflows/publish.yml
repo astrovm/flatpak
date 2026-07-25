@@ -23,6 +23,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-26.04
+    environment: flatpak-signing
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,7 +33,7 @@ jobs:
       - name: Install publishing tools
         run: |
           sudo apt update
-          sudo apt install -y flatpak gnupg ostree
+          sudo apt install -y flatpak gnupg jq ostree
 
       - name: Resolve publication request
         id: request
@@ -43,33 +44,17 @@ jobs:
           MANUAL_REPOSITORY: ${{ inputs.repository }}
           MANUAL_TAG: ${{ inputs.tag }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = "repository_dispatch" ]; then
-            repository=$DISPATCH_REPOSITORY
-            tag=$DISPATCH_TAG
-          else
-            repository=$MANUAL_REPOSITORY
-            tag=$MANUAL_TAG
-          fi
-
-          if [ -z "$repository" ]; then
-            echo "::error::Repository is required"
-            exit 1
-          fi
-
-          if [ -z "$tag" ]; then
-            tag=$(gh release view --repo "$repository" --json tagName --jq .tagName)
-            echo "::notice::No tag provided; using latest release $tag"
-          fi
-
-          echo "repository=$repository" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          scripts/resolve-request.sh "$GITHUB_EVENT_NAME" "$GITHUB_OUTPUT"
 
       - name: Prepare publishing branch
+        id: publishing-branch
         run: |
           if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
             git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            echo "previous_commit=$(git rev-parse origin/gh-pages)" >> "$GITHUB_OUTPUT"
             git worktree add -B gh-pages site origin/gh-pages
           else
+            echo "previous_commit=none" >> "$GITHUB_OUTPUT"
             git worktree add --detach site
             git -C site switch --orphan gh-pages
             git -C site rm -rf . >/dev/null 2>&1 || true
@@ -80,15 +65,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
           FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+          SOURCE_REPOSITORY: ${{ steps.request.outputs.repository }}
+          SOURCE_TAG: ${{ steps.request.outputs.tag }}
         run: |
           scripts/publish.sh \
-            "${{ steps.request.outputs.repository }}" \
-            "${{ steps.request.outputs.tag }}" \
-            site \
-            "$RUNNER_TEMP/flatpak-bundles"
+            "$SOURCE_REPOSITORY" \
+            "$SOURCE_TAG" \
+            site
 
       - name: Commit repository
         env:
+          PREVIOUS_COMMIT: ${{ steps.publishing-branch.outputs.previous_commit }}
           SOURCE_REPOSITORY: ${{ steps.request.outputs.repository }}
           SOURCE_TAG: ${{ steps.request.outputs.tag }}
         run: |
@@ -102,5 +89,11 @@ jobs:
           fi
 
           tree=$(git -C site write-tree)
-          commit=$(printf 'Publish %s %s\n' "$SOURCE_REPOSITORY" "$SOURCE_TAG" | git -C site commit-tree "$tree")
+          commit=$(
+            printf 'Publish %s %s\n\nPrevious snapshot: %s\n' \
+              "$SOURCE_REPOSITORY" \
+              "$SOURCE_TAG" \
+              "$PREVIOUS_COMMIT" |
+              git -C site commit-tree "$tree"
+          )
           git -C site push --force origin "$commit:refs/heads/gh-pages"
