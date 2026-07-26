@@ -170,24 +170,26 @@ a:focus-visible {
   justify-content: space-between;
   gap: 2rem;
   padding: 1.5rem;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.app-card:hover {
+  border-color: #8fe7d6;
+  transform: translateY(-2px);
 }
 
 .app-card h2 {
-  margin-bottom: 0;
+  margin-bottom: 0.75rem;
   font-size: 1.5rem;
 }
 
-.app-card .actions {
-  flex-shrink: 0;
-}
-
-.app-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+.app-card-arrow {
+  flex: none;
+  color: #8fe7d6;
+  font-size: 1.5rem;
 }
 
 .github-link {
@@ -289,12 +291,6 @@ pre {
 
   .grid {
     grid-template-columns: 1fr;
-  }
-
-  .app-card {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 1.5rem;
   }
 
   .actions {
