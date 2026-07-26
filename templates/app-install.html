@@ -6,17 +6,25 @@
     <title>Install @APP_NAME@</title>
     <meta
       name="description"
-      content="Install @APP_NAME@ on Linux with Flatpak."
+      content="Install @APP_NAME@ on Linux with Flatpak. @APP_SUMMARY@"
+    >
+    <meta name="theme-color" content="#07111f">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Install @APP_NAME@">
+    <meta property="og:description" content="@APP_SUMMARY@">
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307111f'/%3E%3Crect x='2' y='2' width='60' height='60' rx='12' fill='none' stroke='%238fe7d6' stroke-opacity='.4' stroke-width='3'/%3E%3Ctext x='32' y='44' font-family='system-ui,sans-serif' font-size='32' font-weight='800' fill='%238fe7d6' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E"
     >
     <link rel="stylesheet" href="/styles.css?v=@STYLES_VERSION@">
   </head>
   <body>
     <main class="page">
       <header class="site-header">
-        <div class="brand">
+        <a class="brand" href="/">
           <span class="brand-mark" aria-hidden="true">A</span>
           <span>astrovm Flatpak Repository</span>
-        </div>
+        </a>
         <a class="github-link" href="@REPOSITORY_URL@">
           <svg
             class="github-icon"
@@ -30,12 +38,12 @@
       </header>
 
       <section class="hero">
-        <p class="eyebrow">Linux · Flatpak</p>
-        <h1>Install @APP_NAME@</h1>
-        <p class="lede">
-          This installer requires Linux with Flatpak. On supported systems, your
-          software manager should open automatically.
-        </p>
+        <p class="eyebrow">Install via Flatpak</p>
+        <h1 class="app-title">@APP_NAME@</h1>
+        <p class="lede">@APP_SUMMARY@</p>
+        <div class="arch-list" aria-label="Supported architectures">
+          @APP_ARCH_BADGES@
+        </div>
         <div class="actions">
           <a
             id="install-link"
@@ -48,6 +56,9 @@
             Back to repository
           </a>
         </div>
+        <p class="status" id="install-status" role="status" hidden>
+          Opening your software manager…
+        </p>
         <p class="fallback">
           Nothing happened?
           <a href="/@APP_ID@.flatpakref">
@@ -59,11 +70,49 @@
 
       <details class="terminal">
         <summary>Install from a terminal</summary>
-        <pre><code>flatpak install https://flatpak.4st.li/@APP_ID@.flatpakref</code></pre>
+        <div class="command-row">
+          <pre><code>flatpak install https://flatpak.4st.li/@APP_ID@.flatpakref</code></pre>
+          <button
+            class="copy-button"
+            type="button"
+            data-copy="flatpak install https://flatpak.4st.li/@APP_ID@.flatpakref"
+          >
+            Copy
+          </button>
+        </div>
       </details>
+
+      <footer class="site-footer">
+        <p>Signed and served from flatpak.4st.li</p>
+      </footer>
     </main>
     <script>
-      window.location.replace(document.getElementById("install-link").href);
+      const status = document.getElementById("install-status");
+      status.hidden = false;
+      try {
+        window.location.replace(document.getElementById("install-link").href);
+      } catch {
+        status.hidden = true;
+      }
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+          } catch {
+            const field = document.createElement("textarea");
+            field.value = button.dataset.copy;
+            document.body.append(field);
+            field.select();
+            document.execCommand("copy");
+            field.remove();
+          }
+          button.textContent = "Copied";
+          setTimeout(() => {
+            button.textContent = "Copy";
+          }, 2000);
+        });
+      });
     </script>
   </body>
 </html>

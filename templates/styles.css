@@ -3,9 +3,26 @@
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  color: #ecf4ff;
-  background: #07111f;
   font-synthesis: none;
+
+  --bg: #07111f;
+  --text: #ecf4ff;
+  --muted: #a9bad0;
+  --dim: #91a5bd;
+  --accent: #8fe7d6;
+  --accent-ink: #07111f;
+  --accent-soft: #c7f7ee;
+  --border: rgb(114 147 178 / 22%);
+  --border-strong: #29435d;
+  --surface: rgb(8 23 38 / 72%);
+  --surface-control: rgb(15 36 55 / 80%);
+  --surface-mark: rgb(17 45 68 / 75%);
+  --code: #b9f4e9;
+  --radius-sm: 0.75rem;
+  --radius-lg: 1rem;
+
+  color: var(--text);
+  background: var(--bg);
 }
 
 * {
@@ -19,11 +36,15 @@ body {
   background:
     radial-gradient(circle at 15% 0%, rgb(23 99 156 / 35%), transparent 32rem),
     radial-gradient(circle at 85% 15%, rgb(31 194 164 / 18%), transparent 28rem),
-    #07111f;
+    var(--bg);
 }
 
 a {
   color: inherit;
+}
+
+::selection {
+  background: rgb(143 231 214 / 30%);
 }
 
 .page {
@@ -31,6 +52,8 @@ a {
   margin-inline: auto;
   padding-block: 2rem 3rem;
 }
+
+/* Header */
 
 .site-header {
   display: flex;
@@ -44,15 +67,16 @@ a {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: clamp(3rem, 8vw, 5rem);
-  color: #a9bad0;
+  color: var(--muted);
   font-size: 0.875rem;
   font-weight: 650;
   letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: color 160ms ease;
 }
 
-.site-header .brand {
-  margin-bottom: 0;
+.brand:hover {
+  color: var(--text);
 }
 
 .brand-mark {
@@ -61,11 +85,49 @@ a {
   height: 2.25rem;
   place-items: center;
   border: 1px solid rgb(143 231 214 / 35%);
-  border-radius: 0.75rem;
-  background: rgb(17 45 68 / 75%);
-  color: #8fe7d6;
+  border-radius: var(--radius-sm);
+  background: var(--surface-mark);
+  color: var(--accent);
   font-weight: 800;
+  transition: border-color 160ms ease;
 }
+
+.brand:hover .brand-mark {
+  border-color: var(--accent);
+}
+
+.github-link {
+  display: inline-flex;
+  min-height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-control);
+  color: var(--accent-soft);
+  font-size: 0.875rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.github-link:hover {
+  border-color: var(--accent);
+  background: rgb(22 52 76 / 90%);
+}
+
+.github-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  fill: currentColor;
+}
+
+/* Hero */
 
 .hero {
   max-width: 48rem;
@@ -73,7 +135,7 @@ a {
 
 .eyebrow {
   margin: 0 0 1rem;
-  color: #8fe7d6;
+  color: var(--accent);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -92,6 +154,13 @@ h1 {
   font-size: clamp(3rem, 9vw, 6.75rem);
   line-height: 0.95;
   letter-spacing: -0.06em;
+  text-wrap: balance;
+}
+
+h1.app-title {
+  max-width: none;
+  font-size: clamp(2.5rem, 7vw, 4.5rem);
+  letter-spacing: -0.045em;
 }
 
 h2 {
@@ -102,10 +171,32 @@ h2 {
 .lede {
   max-width: 38rem;
   margin-bottom: 2rem;
-  color: #a9bad0;
+  color: var(--muted);
   font-size: clamp(1.05rem, 2vw, 1.25rem);
   line-height: 1.65;
+  text-wrap: balance;
 }
+
+/* Architecture badges */
+
+.arch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: -0.75rem 0 1.75rem;
+}
+
+.arch-badge {
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--dim);
+  font: 650 0.75rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Buttons */
 
 .actions {
   display: flex;
@@ -119,20 +210,22 @@ h2 {
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1.1rem;
-  border: 1px solid #29435d;
-  border-radius: 0.8rem;
-  background: rgb(15 36 55 / 80%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-control);
   font-weight: 750;
   text-decoration: none;
   transition:
     border-color 160ms ease,
+    box-shadow 160ms ease,
     transform 160ms ease;
 }
 
 .button-primary {
-  border-color: #8fe7d6;
-  background: #8fe7d6;
-  color: #07111f;
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0.5rem 1.75rem rgb(143 231 214 / 14%);
+  color: var(--accent-ink);
 }
 
 .button:hover {
@@ -140,12 +233,71 @@ h2 {
   transform: translateY(-2px);
 }
 
+.button-primary:hover {
+  box-shadow: 0 0.75rem 2rem rgb(143 231 214 / 22%);
+}
+
+.button:active {
+  transform: translateY(0);
+}
+
 .button:focus-visible,
+.copy-button:focus-visible,
 summary:focus-visible,
 a:focus-visible {
-  outline: 3px solid #ffce70;
+  outline: 3px solid #d6fff7;
   outline-offset: 3px;
 }
+
+/* Install status and fallback */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.5rem 0 0;
+  color: var(--accent-soft);
+  font-size: 0.925rem;
+  font-weight: 650;
+}
+
+.status::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  flex: none;
+  border-radius: 999px;
+  background: var(--accent);
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.status[hidden] {
+  display: none;
+}
+
+.fallback {
+  margin: 1.5rem 0 0;
+  color: var(--dim);
+  font-size: 0.925rem;
+  line-height: 1.6;
+}
+
+.fallback a {
+  color: var(--accent-soft);
+}
+
+/* Catalog */
 
 .catalog {
   max-width: 48rem;
@@ -155,6 +307,34 @@ a:focus-visible {
 .catalog-list {
   display: grid;
   gap: 1rem;
+}
+
+.card,
+.terminal {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 18%);
+  backdrop-filter: blur(12px);
+}
+
+.card {
+  padding: 1.25rem;
+}
+
+.card p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.925rem;
+  line-height: 1.6;
+}
+
+.card.app-card {
+  padding: 1.5rem;
+  border-color: rgb(143 231 214 / 28%);
+  background:
+    linear-gradient(120deg, rgb(17 45 68 / 45%), transparent 70%),
+    var(--surface);
 }
 
 .app-card {
@@ -170,7 +350,7 @@ a:focus-visible {
 }
 
 .app-card:hover {
-  border-color: #8fe7d6;
+  border-color: var(--accent);
   transform: translateY(-2px);
 }
 
@@ -181,9 +361,16 @@ a:focus-visible {
 
 .app-card-arrow {
   flex: none;
-  color: #8fe7d6;
+  color: var(--accent);
   font-size: 1.5rem;
+  transition: transform 160ms ease;
 }
+
+.app-card:hover .app-card-arrow {
+  transform: translateX(4px);
+}
+
+/* Benefits */
 
 .benefits {
   margin-top: clamp(3.5rem, 8vw, 5.5rem);
@@ -203,7 +390,7 @@ a:focus-visible {
 }
 
 .benefit + .benefit {
-  border-left: 1px solid rgb(114 147 178 / 22%);
+  border-left: 1px solid var(--border);
 }
 
 .benefit h2 {
@@ -212,121 +399,108 @@ a:focus-visible {
 
 .benefit p {
   margin-bottom: 0;
-  color: #91a5bd;
+  color: var(--dim);
   font-size: 0.925rem;
   line-height: 1.6;
 }
 
-.github-link {
-  display: inline-flex;
-  min-height: 2.25rem;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid #29435d;
-  border-radius: 0.7rem;
-  background: rgb(15 36 55 / 80%);
-  color: #c7f7ee;
-  font-size: 0.875rem;
-  font-weight: 750;
-  text-decoration: none;
-  transition:
-    background 160ms ease,
-    border-color 160ms ease;
-}
-
-.github-link:hover {
-  border-color: #8fe7d6;
-  background: rgb(22 52 76 / 90%);
-}
-
-.github-icon {
-  width: 1.1rem;
-  height: 1.1rem;
-  flex: none;
-  fill: currentColor;
-}
-
-.site-header .github-link {
-  flex-shrink: 0;
-}
-
-.card,
-.terminal {
-  border: 1px solid rgb(114 147 178 / 22%);
-  border-radius: 1rem;
-  background: rgb(8 23 38 / 72%);
-  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 18%);
-  backdrop-filter: blur(12px);
-}
-
-.card {
-  padding: 1.25rem;
-}
-
-.card.app-card {
-  padding: 1.5rem;
-  border-color: rgb(143 231 214 / 28%);
-  background:
-    linear-gradient(120deg, rgb(17 45 68 / 45%), transparent 70%),
-    rgb(8 23 38 / 72%);
-}
-
-.card p {
-  margin-bottom: 0;
-  color: #91a5bd;
-  font-size: 0.925rem;
-  line-height: 1.6;
-}
+/* Terminal and collapsible commands */
 
 .terminal {
   margin-top: 1rem;
   padding: 1.25rem;
 }
 
-.repository-setup {
-  margin-top: clamp(3rem, 7vw, 5rem);
-  padding-top: 1.5rem;
-  border-top: 1px solid rgb(114 147 178 / 22%);
-  color: #a9bad0;
+.hero + .terminal {
+  margin-top: 2rem;
 }
 
-.repository-setup summary {
-  color: #d7e4f4;
+.repository-setup {
+  max-width: 48rem;
+  margin-top: clamp(3rem, 7vw, 5rem);
 }
 
 summary {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   cursor: pointer;
+  color: #d7e4f4;
   font-weight: 750;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::before {
+  content: "▸";
+  color: var(--accent);
+  font-size: 0.8em;
+  transition: transform 160ms ease;
+}
+
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.command-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 pre {
-  margin: 1rem 0 0;
+  flex: 1;
+  margin: 0;
   overflow-x: auto;
-  color: #b9f4e9;
+  color: var(--code);
   font: 0.875rem/1.7 ui-monospace, SFMono-Regular, Consolas, monospace;
   white-space: pre-wrap;
 }
 
-.fallback {
-  margin: 2rem 0 0;
-  color: #91a5bd;
-  font-size: 0.925rem;
-  line-height: 1.6;
+.copy-button {
+  flex: none;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-soft);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  line-height: 1.4;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 
-.fallback a {
-  color: #c7f7ee;
+.copy-button:hover {
+  border-color: var(--accent);
+  background: var(--surface-control);
+}
+
+/* Footer */
+
+.site-footer {
+  margin-top: clamp(3rem, 7vw, 5rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.site-footer p {
+  margin-bottom: 0;
 }
 
 @media (max-width: 44rem) {
   .page {
     width: min(100% - 1.25rem, 68rem);
     padding-top: 1rem;
-  }
-
-  .brand {
-    margin-bottom: 3rem;
   }
 
   .site-header {
@@ -339,7 +513,7 @@ pre {
 
   .benefit {
     padding: 1.25rem 0;
-    border-top: 1px solid rgb(114 147 178 / 22%);
+    border-top: 1px solid var(--border);
   }
 
   .benefit + .benefit {
