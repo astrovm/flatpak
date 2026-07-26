@@ -34,17 +34,21 @@ escape_sed_replacement()
 render_app_card()
 {
   local repository=$1
-  local app_id app_name app_summary
+  local app_id app_name app_summary repository_url
 
   app_id=$(app_value "$repository" id)
   app_name=$(app_html_value "$repository" name)
   app_summary=$(app_html_value "$repository" summary)
+  repository_url=https://github.com/$repository
 
   cat <<EOF
           <article class="card app-card">
             <div>
               <h2>$app_name</h2>
               <p>$app_summary</p>
+              <a class="source-link" href="$repository_url">
+                View on GitHub
+              </a>
             </div>
             <div class="actions">
               <a

@@ -32,6 +32,14 @@ a {
   padding-block: 2rem 3rem;
 }
 
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(4rem, 12vw, 8rem);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -41,6 +49,10 @@ a {
   font-size: 0.875rem;
   font-weight: 650;
   letter-spacing: 0.04em;
+}
+
+.site-header .brand {
+  margin-bottom: 0;
 }
 
 .brand-mark {
@@ -168,6 +180,20 @@ a:focus-visible {
   flex-shrink: 0;
 }
 
+.source-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: #c7f7ee;
+  font-size: 0.875rem;
+  font-weight: 750;
+  text-underline-offset: 0.2em;
+}
+
+.site-header .source-link {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
 .card,
 .terminal {
   border: 1px solid rgb(114 147 178 / 22%);
@@ -224,6 +250,10 @@ pre {
   }
 
   .brand {
+    margin-bottom: 4rem;
+  }
+
+  .site-header {
     margin-bottom: 4rem;
   }
 
