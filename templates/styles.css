@@ -53,6 +53,10 @@ a {
   padding-block: 2rem 3rem;
 }
 
+.page-index {
+  width: min(100% - 2rem, 48rem);
+}
+
 /* Header */
 
 .site-header {
@@ -423,6 +427,10 @@ pre {
   .page {
     width: min(100% - 1.25rem, 68rem);
     padding-top: 1rem;
+  }
+
+  .page-index {
+    width: min(100% - 1.25rem, 48rem);
   }
 
   .site-header {
