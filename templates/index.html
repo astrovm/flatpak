@@ -32,22 +32,25 @@
         </div>
       </section>
 
-      <section class="grid" aria-label="Repository details">
-        <article class="card">
-          <h2>Trusted releases</h2>
-          <p>Every published application and repository update is signed.</p>
-        </article>
-        <article class="card">
-          <h2>Automatic updates</h2>
-          <p>New releases arrive through the normal Flatpak update flow.</p>
-        </article>
-        <article class="card">
-          <h2>Native packages</h2>
-          <p>Each app is published for its supported Linux architectures.</p>
-        </article>
+      <section class="benefits" aria-label="Why this repository">
+        <p class="eyebrow">Why this repository</p>
+        <div class="benefit-list">
+          <article class="benefit">
+            <h2>Trusted releases</h2>
+            <p>Every published application and repository update is signed.</p>
+          </article>
+          <article class="benefit">
+            <h2>Automatic updates</h2>
+            <p>New releases arrive through the normal Flatpak update flow.</p>
+          </article>
+          <article class="benefit">
+            <h2>Native packages</h2>
+            <p>Each app is published for its supported Linux architectures.</p>
+          </article>
+        </div>
       </section>
 
-      <details class="terminal">
+      <details class="repository-setup">
         <summary>Add the repository from a terminal</summary>
         <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo</code></pre>
       </details>

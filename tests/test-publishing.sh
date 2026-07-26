@@ -251,6 +251,9 @@ if ! grep -Fq "Adventure Mods" "$site_directory/index.html" ||
   ! grep -Fq "Test App" "$site_directory/index.html" ||
   ! grep -Fq "/apps/io.github.astrovm.AdventureMods/install/" \
     "$site_directory/index.html" ||
+  ! grep -Fq "Why this repository" "$site_directory/index.html" ||
+  ! grep -Fq 'class="benefit-list"' "$site_directory/index.html" ||
+  grep -Fq 'class="grid"' "$site_directory/index.html" ||
   grep -Fq "https://github.com/" "$site_directory/index.html" ||
   grep -Fq "Download installer" "$site_directory/index.html" ||
   ! grep -Fq "https://github.com/astrovm/AdventureMods" \

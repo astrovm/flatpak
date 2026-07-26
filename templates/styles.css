@@ -37,14 +37,14 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: clamp(4rem, 12vw, 8rem);
+  margin-bottom: clamp(3rem, 8vw, 5rem);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: clamp(4rem, 12vw, 8rem);
+  margin-bottom: clamp(3rem, 8vw, 5rem);
   color: #a9bad0;
   font-size: 0.875rem;
   font-weight: 650;
@@ -147,16 +147,9 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: clamp(4rem, 10vw, 7rem);
-}
-
 .catalog {
   max-width: 48rem;
-  margin-top: clamp(4rem, 10vw, 7rem);
+  margin-top: clamp(3rem, 7vw, 4.5rem);
 }
 
 .catalog-list {
@@ -190,6 +183,38 @@ a:focus-visible {
   flex: none;
   color: #8fe7d6;
   font-size: 1.5rem;
+}
+
+.benefits {
+  margin-top: clamp(3.5rem, 8vw, 5.5rem);
+}
+
+.benefit-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.benefit {
+  padding-inline: 1.5rem;
+}
+
+.benefit:first-child {
+  padding-left: 0;
+}
+
+.benefit + .benefit {
+  border-left: 1px solid rgb(114 147 178 / 22%);
+}
+
+.benefit h2 {
+  font-size: 1rem;
+}
+
+.benefit p {
+  margin-bottom: 0;
+  color: #91a5bd;
+  font-size: 0.925rem;
+  line-height: 1.6;
 }
 
 .github-link {
@@ -239,6 +264,14 @@ a:focus-visible {
   padding: 1.25rem;
 }
 
+.card.app-card {
+  padding: 1.5rem;
+  border-color: rgb(143 231 214 / 28%);
+  background:
+    linear-gradient(120deg, rgb(17 45 68 / 45%), transparent 70%),
+    rgb(8 23 38 / 72%);
+}
+
 .card p {
   margin-bottom: 0;
   color: #91a5bd;
@@ -249,6 +282,17 @@ a:focus-visible {
 .terminal {
   margin-top: 1rem;
   padding: 1.25rem;
+}
+
+.repository-setup {
+  margin-top: clamp(3rem, 7vw, 5rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(114 147 178 / 22%);
+  color: #a9bad0;
+}
+
+.repository-setup summary {
+  color: #d7e4f4;
 }
 
 summary {
@@ -282,15 +326,24 @@ pre {
   }
 
   .brand {
-    margin-bottom: 4rem;
+    margin-bottom: 3rem;
   }
 
   .site-header {
-    margin-bottom: 4rem;
+    margin-bottom: 3rem;
   }
 
-  .grid {
+  .benefit-list {
     grid-template-columns: 1fr;
+  }
+
+  .benefit {
+    padding: 1.25rem 0;
+    border-top: 1px solid rgb(114 147 178 / 22%);
+  }
+
+  .benefit + .benefit {
+    border-left: 0;
   }
 
   .actions {
