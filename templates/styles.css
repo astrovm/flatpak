@@ -96,30 +96,6 @@ a {
   border-color: var(--accent);
 }
 
-.github-link {
-  display: inline-flex;
-  min-height: 2.25rem;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-control);
-  color: var(--accent-soft);
-  font-size: 0.875rem;
-  font-weight: 750;
-  text-decoration: none;
-  transition:
-    background 160ms ease,
-    border-color 160ms ease;
-}
-
-.github-link:hover {
-  border-color: var(--accent);
-  background: rgb(22 52 76 / 90%);
-}
-
 .github-icon {
   width: 1.1rem;
   height: 1.1rem;
@@ -131,10 +107,6 @@ a {
 
 .hero {
   max-width: 48rem;
-}
-
-.hero-wide {
-  max-width: none;
 }
 
 .eyebrow {
@@ -206,6 +178,7 @@ h2 {
   min-height: 3rem;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.1rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
@@ -374,6 +347,7 @@ a:focus-visible {
 }
 
 .hero + .terminal {
+  max-width: 48rem;
   margin-top: 2rem;
 }
 
