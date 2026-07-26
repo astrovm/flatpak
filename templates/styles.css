@@ -48,7 +48,7 @@ a {
 }
 
 .page {
-  width: min(100% - 2rem, 48rem);
+  width: min(100% - 2rem, 68rem);
   margin-inline: auto;
   padding-block: 2rem 3rem;
 }
@@ -421,7 +421,7 @@ pre {
 
 @media (max-width: 44rem) {
   .page {
-    width: min(100% - 1.25rem, 48rem);
+    width: min(100% - 1.25rem, 68rem);
     padding-top: 1rem;
   }
 
