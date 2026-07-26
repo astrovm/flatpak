@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Install Adventure Mods</title>
+    <title>Install @APP_NAME@</title>
     <meta
       name="description"
-      content="Install Adventure Mods on Linux with Flatpak."
+      content="Install @APP_NAME@ on Linux with Flatpak."
     >
     <link rel="stylesheet" href="/styles.css">
   </head>
@@ -19,7 +19,7 @@
 
       <section class="hero">
         <p class="eyebrow">Linux · Flatpak</p>
-        <h1>Install Adventure Mods</h1>
+        <h1>Install @APP_NAME@</h1>
         <p class="lede">
           This installer requires Linux with Flatpak. On supported systems, your
           software manager should open automatically.
@@ -28,7 +28,7 @@
           <a
             id="install-link"
             class="button button-primary"
-            href="flatpak+https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref"
+            href="flatpak+https://flatpak.4st.li/@APP_ID@.flatpakref"
           >
             Open software manager
           </a>
@@ -38,7 +38,7 @@
         </div>
         <p class="fallback">
           Nothing happened?
-          <a href="/io.github.astrovm.AdventureMods.flatpakref">
+          <a href="/@APP_ID@.flatpakref">
             Download the installer
           </a>
           or use the terminal command below.
@@ -47,7 +47,7 @@
 
       <details class="terminal">
         <summary>Install from a terminal</summary>
-        <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
+        <pre><code>flatpak install https://flatpak.4st.li/@APP_ID@.flatpakref</code></pre>
       </details>
     </main>
     <script>

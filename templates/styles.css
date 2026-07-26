@@ -142,6 +142,32 @@ a:focus-visible {
   margin-top: clamp(4rem, 10vw, 7rem);
 }
 
+.catalog {
+  max-width: 48rem;
+  margin-top: clamp(4rem, 10vw, 7rem);
+}
+
+.catalog-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.app-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.5rem;
+}
+
+.app-card h2 {
+  font-size: 1.5rem;
+}
+
+.app-card .actions {
+  flex-shrink: 0;
+}
+
 .card,
 .terminal {
   border: 1px solid rgb(114 147 178 / 22%);
@@ -203,6 +229,12 @@ pre {
 
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .app-card {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1.5rem;
   }
 
   .actions {

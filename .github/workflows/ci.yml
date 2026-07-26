@@ -22,8 +22,11 @@ jobs:
 
       - name: Validate shell scripts
         run: |
-          find scripts tests -type f -name '*.sh' -exec bash -n {} +
-          find scripts tests -type f -name '*.sh' -exec shellcheck {} +
+          find scripts tests -type f -name '*.sh' -print0 | xargs -0 bash -n
+          find scripts tests -type f -name '*.sh' -print0 | xargs -0 shellcheck
+
+      - name: Validate application registry
+        run: jq -e . apps.json >/dev/null
 
       - name: Test publishing logic
         run: tests/test-publishing.sh

@@ -13,6 +13,8 @@ fi
 event_name=$1
 github_output_file=$2
 
+validate_app_registry
+
 case "$event_name" in
   repository_dispatch)
     repository=${DISPATCH_REPOSITORY:-}
