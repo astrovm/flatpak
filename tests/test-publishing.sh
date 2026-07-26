@@ -247,15 +247,18 @@ for path in \
   fi
 done
 
-if ! grep -Fq "Install Adventure Mods" "$site_directory/index.html" ||
-  ! grep -Fq "Install Test App" "$site_directory/index.html" ||
-  ! grep -Fq "https://github.com/astrovm/flatpak" "$site_directory/index.html" ||
-  ! grep -Fq "https://github.com/astrovm/AdventureMods" "$site_directory/index.html" ||
-  ! grep -Fq "https://github.com/astrovm/TestApp" "$site_directory/index.html" ||
+if ! grep -Fq "Adventure Mods" "$site_directory/index.html" ||
+  ! grep -Fq "Test App" "$site_directory/index.html" ||
+  ! grep -Fq "/apps/io.github.astrovm.AdventureMods/install/" \
+    "$site_directory/index.html" ||
+  grep -Fq "https://github.com/" "$site_directory/index.html" ||
+  grep -Fq "Download installer" "$site_directory/index.html" ||
   ! grep -Fq "https://github.com/astrovm/AdventureMods" \
     "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
-  ! grep -Fq 'class="github-icon"' "$site_directory/index.html" ||
   ! grep -Fq 'class="github-icon"' \
+    "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
+  ! grep -Eq 'styles[.]css[?]v=[0-9a-f]{12}' "$site_directory/index.html" ||
+  ! grep -Eq 'styles[.]css[?]v=[0-9a-f]{12}' \
     "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
   grep -Fq "APP_CARDS" "$site_directory/index.html" ||
   grep -ERq '@[A-Z_]+@' "$site_directory"; then
