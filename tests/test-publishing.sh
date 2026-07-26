@@ -260,6 +260,11 @@ if ! grep -Fq "Adventure Mods" "$site_directory/index.html" ||
     "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
   ! grep -Fq 'class="github-icon"' \
     "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
+  ! grep -Fq '<main class="page">' "$site_directory/index.html" ||
+  ! grep -Fq '<main class="page">' \
+    "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
+  grep -Fq "page-index" "$site_directory/index.html" ||
+  grep -Fq "page-index" "$site_directory/styles.css" ||
   ! grep -Eq 'styles[.]css[?]v=[0-9a-f]{12}' "$site_directory/index.html" ||
   ! grep -Eq 'styles[.]css[?]v=[0-9a-f]{12}' \
     "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
