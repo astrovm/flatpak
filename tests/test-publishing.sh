@@ -252,6 +252,11 @@ if ! grep -Fq "Install Adventure Mods" "$site_directory/index.html" ||
   ! grep -Fq "https://github.com/astrovm/flatpak" "$site_directory/index.html" ||
   ! grep -Fq "https://github.com/astrovm/AdventureMods" "$site_directory/index.html" ||
   ! grep -Fq "https://github.com/astrovm/TestApp" "$site_directory/index.html" ||
+  ! grep -Fq "https://github.com/astrovm/AdventureMods" \
+    "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
+  ! grep -Fq 'class="github-icon"' "$site_directory/index.html" ||
+  ! grep -Fq 'class="github-icon"' \
+    "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" ||
   grep -Fq "APP_CARDS" "$site_directory/index.html" ||
   grep -ERq '@[A-Z_]+@' "$site_directory"; then
   echo "not ok - generated site contains incorrect application content" >&2
