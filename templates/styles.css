@@ -173,6 +173,7 @@ a:focus-visible {
 }
 
 .app-card h2 {
+  margin-bottom: 0;
   font-size: 1.5rem;
 }
 
@@ -180,18 +181,47 @@ a:focus-visible {
   flex-shrink: 0;
 }
 
-.source-link {
-  display: inline-block;
-  margin-top: 0.75rem;
+.app-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.github-link {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #29435d;
+  border-radius: 0.7rem;
+  background: rgb(15 36 55 / 80%);
   color: #c7f7ee;
   font-size: 0.875rem;
   font-weight: 750;
-  text-underline-offset: 0.2em;
+  text-decoration: none;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
-.site-header .source-link {
+.github-link:hover {
+  border-color: #8fe7d6;
+  background: rgb(22 52 76 / 90%);
+}
+
+.github-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  fill: currentColor;
+}
+
+.site-header .github-link {
   flex-shrink: 0;
-  margin-top: 0;
 }
 
 .card,
