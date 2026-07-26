@@ -37,9 +37,9 @@
         </a>
       </header>
 
-      <section class="hero">
+      <section class="hero hero-wide">
         <p class="eyebrow">Install via Flatpak</p>
-        <h1 class="app-title">@APP_NAME@</h1>
+        <h1>@APP_NAME@</h1>
         <p class="lede">@APP_SUMMARY@</p>
         <div class="arch-list" aria-label="Supported architectures">
           @APP_ARCH_BADGES@
@@ -56,9 +56,6 @@
             Back to repository
           </a>
         </div>
-        <p class="status" id="install-status" role="status" hidden>
-          Opening your software manager…
-        </p>
         <p class="fallback">
           Nothing happened?
           <a href="/@APP_ID@.flatpakref">
@@ -81,18 +78,12 @@
           </button>
         </div>
       </details>
-
-      <footer class="site-footer">
-        <p>Signed and served from flatpak.4st.li</p>
-      </footer>
     </main>
     <script>
-      const status = document.getElementById("install-status");
-      status.hidden = false;
       try {
         window.location.replace(document.getElementById("install-link").href);
       } catch {
-        status.hidden = true;
+        // This browser cannot open the software manager; the page stays put.
       }
 
       document.querySelectorAll("[data-copy]").forEach((button) => {

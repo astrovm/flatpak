@@ -69,7 +69,7 @@ Add one object to `apps.json`:
   "summary": "A short description.",
   "bundle_prefix": "Example",
   "branch": "master",
-  "architectures": ["aarch64", "x86_64"],
+  "architectures": ["x86_64", "aarch64"],
   "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
 }
 ```

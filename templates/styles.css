@@ -133,6 +133,10 @@ a {
   max-width: 48rem;
 }
 
+.hero-wide {
+  max-width: none;
+}
+
 .eyebrow {
   margin: 0 0 1rem;
   color: var(--accent);
@@ -149,18 +153,11 @@ p {
 }
 
 h1 {
-  max-width: 13ch;
   margin-bottom: 1.25rem;
   font-size: clamp(3rem, 9vw, 6.75rem);
   line-height: 0.95;
   letter-spacing: -0.06em;
   text-wrap: balance;
-}
-
-h1.app-title {
-  max-width: none;
-  font-size: clamp(2.5rem, 7vw, 4.5rem);
-  letter-spacing: -0.045em;
 }
 
 h2 {
@@ -249,42 +246,7 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
-/* Install status and fallback */
-
-.status {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 1.5rem 0 0;
-  color: var(--accent-soft);
-  font-size: 0.925rem;
-  font-weight: 650;
-}
-
-.status::before {
-  content: "";
-  width: 0.6rem;
-  height: 0.6rem;
-  flex: none;
-  border-radius: 999px;
-  background: var(--accent);
-  animation: status-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes status-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-.status[hidden] {
-  display: none;
-}
+/* Install fallback */
 
 .fallback {
   margin: 1.5rem 0 0;
@@ -481,20 +443,6 @@ pre {
 .copy-button:hover {
   border-color: var(--accent);
   background: var(--surface-control);
-}
-
-/* Footer */
-
-.site-footer {
-  margin-top: clamp(3rem, 7vw, 5rem);
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-  color: var(--dim);
-  font-size: 0.875rem;
-}
-
-.site-footer p {
-  margin-bottom: 0;
 }
 
 @media (max-width: 44rem) {

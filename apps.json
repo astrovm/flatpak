@@ -8,8 +8,8 @@
       "bundle_prefix": "AdventureMods",
       "branch": "master",
       "architectures": [
-        "aarch64",
-        "x86_64"
+        "x86_64",
+        "aarch64"
       ],
       "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
     }
