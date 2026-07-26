@@ -180,51 +180,6 @@ pre {
   white-space: pre-wrap;
 }
 
-.install-page {
-  display: grid;
-  min-height: calc(100vh - 5rem);
-  place-items: center;
-}
-
-.install-card {
-  width: min(100%, 40rem);
-  padding: clamp(1.5rem, 5vw, 3rem);
-  text-align: center;
-}
-
-.install-card h1 {
-  max-width: none;
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
-}
-
-.install-card .lede {
-  margin-inline: auto;
-}
-
-.install-card .actions {
-  justify-content: center;
-}
-
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 1.25rem;
-  color: #8fe7d6;
-  font-size: 0.825rem;
-  font-weight: 750;
-}
-
-.status::before {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 50%;
-  background: #8fe7d6;
-  box-shadow: 0 0 0 0.35rem rgb(143 231 214 / 12%);
-  content: "";
-  animation: pulse 1.8s ease-in-out infinite;
-}
-
 .fallback {
   margin: 2rem 0 0;
   color: #91a5bd;
@@ -234,12 +189,6 @@ pre {
 
 .fallback a {
   color: #c7f7ee;
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.45;
-  }
 }
 
 @media (max-width: 44rem) {

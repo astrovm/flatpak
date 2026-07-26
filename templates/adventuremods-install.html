@@ -6,18 +6,23 @@
     <title>Install Adventure Mods</title>
     <meta
       name="description"
-      content="Open Adventure Mods in your Flatpak-compatible software manager."
+      content="Install Adventure Mods on Linux with Flatpak."
     >
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main class="page install-page">
-      <section class="card install-card">
-        <p class="status">Installer ready</p>
-        <h1>Opening your software manager</h1>
+    <main class="page">
+      <header class="brand">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span>astrovm Flatpak Repository</span>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">Linux · Flatpak</p>
+        <h1>Install Adventure Mods</h1>
         <p class="lede">
-          Your desktop should ask for confirmation before installing Adventure
-          Mods from the astrovm repository.
+          This installer requires Linux with Flatpak. On supported systems, your
+          software manager should open automatically.
         </p>
         <div class="actions">
           <a
@@ -36,10 +41,14 @@
           <a href="/io.github.astrovm.AdventureMods.flatpakref">
             Download the installer
           </a>
-          or run:
+          or use the terminal command below.
         </p>
-        <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
       </section>
+
+      <details class="terminal">
+        <summary>Install from a terminal</summary>
+        <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
+      </details>
     </main>
     <script>
       window.location.replace(document.getElementById("install-link").href);
