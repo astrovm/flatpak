@@ -78,13 +78,20 @@ render_app_files()
 {
   local repository=$1
   local app_id app_branch app_name app_summary runtime_repository
-  local install_directory
+  local app_arch_badges install_directory
 
   app_id=$(app_value "$repository" id)
   app_branch=$(app_value "$repository" branch)
   app_name=$(app_value "$repository" name)
   app_summary=$(app_value "$repository" summary)
   runtime_repository=$(app_value "$repository" runtime_repository)
+
+  app_arch_badges=$(
+    while IFS= read -r architecture; do
+      printf '<span class="arch-badge">%s</span> ' "$architecture"
+    done < <(app_architectures "$repository")
+  )
+  app_arch_badges=${app_arch_badges% }
 
   sed \
     -e "s|@APP_ID@|$(escape_sed_replacement "$app_id")|g" \
@@ -101,6 +108,8 @@ render_app_files()
   sed \
     -e "s|@APP_ID@|$(escape_sed_replacement "$app_id")|g" \
     -e "s|@APP_NAME@|$(escape_sed_replacement "$(app_html_value "$repository" name)")|g" \
+    -e "s|@APP_SUMMARY@|$(escape_sed_replacement "$(app_html_value "$repository" summary)")|g" \
+    -e "s|@APP_ARCH_BADGES@|$(escape_sed_replacement "$app_arch_badges")|g" \
     -e "s|@REPOSITORY_URL@|$(escape_sed_replacement "https://github.com/$repository")|g" \
     -e "s|@STYLES_VERSION@|$stylesheet_version|g" \
     "$repository_root/templates/app-install.html" \
