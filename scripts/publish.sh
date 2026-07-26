@@ -15,9 +15,12 @@ source_repository=$1
 release_tag=$2
 output_directory=$(realpath --canonicalize-missing -- "$3")
 
+validate_app_registry
 validate_source_repository "$source_repository"
 validate_release_tag "$release_tag"
 validate_output_directory "$output_directory" "$repository_root"
+
+mapfile -t app_arches < <(app_architectures "$source_repository")
 
 if [ -z "${GH_TOKEN:-}" ]; then
   error "GH_TOKEN is required"
@@ -51,7 +54,10 @@ gh release download "$release_tag" \
   --pattern '*.flatpak' \
   --dir "$bundles_directory"
 
-validate_downloaded_bundles "$release_metadata" "$bundles_directory"
+validate_downloaded_bundles \
+  "$release_metadata" \
+  "$bundles_directory" \
+  "$source_repository"
 
 mkdir -p "$output_directory"
 repository_directory=$output_directory/repo
@@ -74,9 +80,9 @@ mkdir -p \
 
 ostree fsck --quiet --repo="$repository_directory"
 
-for arch in "${EXPECTED_ARCHES[@]}"; do
-  bundle=$bundles_directory/$(expected_bundle_name "$arch")
-  expected=$(expected_ref "$arch")
+for arch in "${app_arches[@]}"; do
+  bundle=$bundles_directory/$(expected_bundle_name "$source_repository" "$arch")
+  expected=$(expected_ref "$source_repository" "$arch")
   inspection_repository=$working_directory/inspect-$arch
 
   ostree init --repo="$inspection_repository" --mode=archive-z2
@@ -117,8 +123,7 @@ validate_repository_refs "$repository_directory"
 
 public_key_file=$working_directory/astrovm.gpg
 gpg --batch --homedir "$gnupg_home" --export "$FLATPAK_GPG_KEY_ID" > "$public_key_file"
-public_key=$(base64 --wrap=0 "$public_key_file")
-if [ -z "$public_key" ]; then
+if [ ! -s "$public_key_file" ]; then
   error "Failed to export the Flatpak repository public key"
   exit 1
 fi
@@ -132,19 +137,6 @@ find "$output_directory" \
   ! -name repo \
   -exec rm -rf -- {} +
 
-sed "s|@GPG_KEY@|$public_key|" \
-  "$repository_root/templates/astrovm.flatpakrepo.in" \
-  > "$output_directory/astrovm.flatpakrepo"
-sed "s|@GPG_KEY@|$public_key|" \
-  "$repository_root/templates/io.github.astrovm.AdventureMods.flatpakref.in" \
-  > "$output_directory/io.github.astrovm.AdventureMods.flatpakref"
-cp "$public_key_file" "$output_directory/astrovm.gpg"
-cp "$repository_root/templates/index.html" "$output_directory/index.html"
-cp "$repository_root/templates/styles.css" "$output_directory/styles.css"
-install_directory="$output_directory/apps/io.github.astrovm.AdventureMods/install"
-mkdir -p "$install_directory"
-cp "$repository_root/templates/adventuremods-install.html" "$install_directory/index.html"
-printf '%s\n' 'flatpak.4st.li' > "$output_directory/CNAME"
-touch "$output_directory/.nojekyll"
+"$script_directory/render-site.sh" "$public_key_file" "$output_directory"
 
 "$script_directory/verify-repository.sh" "$output_directory"

@@ -6,7 +6,7 @@
     <title>astrovm Flatpak Repository</title>
     <meta
       name="description"
-      content="Install Adventure Mods from the official astrovm Flatpak repository."
+      content="Install and update applications from the official astrovm Flatpak repository."
     >
     <link rel="stylesheet" href="/styles.css">
   </head>
@@ -18,25 +18,17 @@
       </header>
 
       <section class="hero">
-        <p class="eyebrow">Sonic Adventure modding on Linux</p>
-        <h1>Adventure Mods</h1>
+        <p class="eyebrow">Official app repository</p>
+        <h1>Apps for Linux</h1>
         <p class="lede">
-          Install the easiest way to manage Sonic Adventure mods on Linux.
-          Updates arrive through Flatpak automatically.
+          Install and update applications published by astrovm through Flatpak.
         </p>
-        <div class="actions">
-          <a
-            class="button button-primary"
-            href="/apps/io.github.astrovm.AdventureMods/install/"
-          >
-            Install Adventure Mods
-          </a>
-          <a
-            class="button"
-            href="/io.github.astrovm.AdventureMods.flatpakref"
-          >
-            Download installer
-          </a>
+      </section>
+
+      <section class="catalog" aria-label="Available apps">
+        <p class="eyebrow">Available apps</p>
+        <div class="catalog-list">
+          <!-- APP_CARDS -->
         </div>
       </section>
 
@@ -50,20 +42,14 @@
           <p>New releases arrive through the normal Flatpak update flow.</p>
         </article>
         <article class="card">
-          <h2>Two architectures</h2>
-          <p>Native packages are available for x86_64 and aarch64 systems.</p>
+          <h2>Native packages</h2>
+          <p>Each app is published for its supported Linux architectures.</p>
         </article>
       </section>
 
       <details class="terminal">
-        <summary>Install from a terminal</summary>
-        <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
-      </details>
-
-      <details class="terminal">
-        <summary>Set up the repository manually</summary>
-        <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo
-flatpak install astrovm io.github.astrovm.AdventureMods</code></pre>
+        <summary>Add the repository from a terminal</summary>
+        <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo</code></pre>
       </details>
     </main>
   </body>

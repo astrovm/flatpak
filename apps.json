@@ -1,0 +1,17 @@
+{
+  "apps": [
+    {
+      "repository": "astrovm/AdventureMods",
+      "id": "io.github.astrovm.AdventureMods",
+      "name": "Adventure Mods",
+      "summary": "The easiest way to manage Sonic Adventure mods on Linux.",
+      "bundle_prefix": "AdventureMods",
+      "branch": "master",
+      "architectures": [
+        "aarch64",
+        "x86_64"
+      ],
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+    }
+  ]
+}

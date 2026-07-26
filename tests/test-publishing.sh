@@ -42,6 +42,7 @@ expect_failure()
   fi
 }
 
+expect_success "application registry is valid" validate_app_registry
 expect_success \
   "allowlisted source repository is accepted" \
   validate_source_repository \
@@ -50,6 +51,89 @@ expect_failure \
   "other source repositories are rejected" \
   validate_source_repository \
   "astrovm/Other"
+
+if [ "$(app_value "astrovm/AdventureMods" id)" != "io.github.astrovm.AdventureMods" ]; then
+  echo "not ok - application metadata lookup is incorrect" >&2
+  exit 1
+fi
+pass "application metadata is loaded from the registry"
+
+multi_app_registry=$temporary_directory/apps.json
+jq '.apps += [{
+  repository: "astrovm/TestApp",
+  id: "io.github.astrovm.TestApp",
+  name: "Test App",
+  summary: "A test application.",
+  bundle_prefix: "TestApp",
+  branch: "stable",
+  architectures: ["x86_64"],
+  runtime_repository: "https://dl.flathub.org/repo/flathub.flatpakrepo"
+}]' "$APP_REGISTRY" > "$multi_app_registry"
+
+# The subshell expands its own positional parameter.
+# shellcheck disable=SC2016
+expect_success \
+  "multiple registered applications are supported" \
+  env \
+  APP_REGISTRY="$multi_app_registry" \
+  bash -c '
+    source "$1"
+    validate_app_registry
+    validate_source_repository "astrovm/TestApp"
+    [ "$(all_expected_refs | wc -l)" -eq 3 ]
+  ' \
+  _ \
+  "$repository_root/scripts/lib/publish-common.sh"
+
+jq '.apps += [.apps[0]]' "$APP_REGISTRY" > "$temporary_directory/duplicate-apps.json"
+# The subshell expands its own positional parameter.
+# shellcheck disable=SC2016
+expect_failure \
+  "duplicate application entries are rejected" \
+  env \
+  APP_REGISTRY="$temporary_directory/duplicate-apps.json" \
+  bash -c 'source "$1"; validate_app_registry' \
+  _ \
+  "$repository_root/scripts/lib/publish-common.sh"
+
+ostree_mock_directory=$temporary_directory/ostree-mock
+mkdir "$ostree_mock_directory"
+# The single quotes write a mock that expands its own environment.
+# shellcheck disable=SC2016
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  '[ "$1" = "refs" ]' \
+  'printf "%s\n" "$MOCK_REFS"' \
+  > "$ostree_mock_directory/ostree"
+chmod +x "$ostree_mock_directory/ostree"
+
+registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable'
+# The subshell expands its own positional parameter.
+# shellcheck disable=SC2016
+expect_success \
+  "repository validation supports all registered applications" \
+  env \
+  APP_REGISTRY="$multi_app_registry" \
+  MOCK_REFS="$registered_refs" \
+  PATH="$ostree_mock_directory:$PATH" \
+  bash -c 'source "$1"; validate_repository_refs "$2"' \
+  _ \
+  "$repository_root/scripts/lib/publish-common.sh" \
+  "$temporary_directory/repository"
+
+# The subshell expands its own positional parameter.
+# shellcheck disable=SC2016
+expect_failure \
+  "repository validation rejects unregistered applications" \
+  env \
+  APP_REGISTRY="$multi_app_registry" \
+  MOCK_REFS="$registered_refs"$'\napp/io.github.astrovm.Unknown/x86_64/master' \
+  PATH="$ostree_mock_directory:$PATH" \
+  bash -c 'source "$1"; validate_repository_refs "$2"' \
+  _ \
+  "$repository_root/scripts/lib/publish-common.sh" \
+  "$temporary_directory/repository"
 
 expect_success "stable release tag is accepted" validate_release_tag "v1.2.3"
 expect_success \
@@ -112,7 +196,8 @@ expect_success \
   "expected bundles and digests are accepted" \
   validate_downloaded_bundles \
   "$metadata_file" \
-  "$bundles_directory"
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
 
 jq '.immutable = false' "$metadata_file" > "$temporary_directory/mutable.json"
 expect_failure \
@@ -126,7 +211,8 @@ expect_failure \
   "bundle digest mismatch is rejected" \
   validate_downloaded_bundles \
   "$metadata_file" \
-  "$bundles_directory"
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
 printf 'x86 bundle\n' > "$bundles_directory/AdventureMods-x86_64.flatpak"
 
 printf 'unexpected\n' > "$bundles_directory/unexpected.flatpak"
@@ -134,7 +220,41 @@ expect_failure \
   "unexpected extra bundle is rejected" \
   validate_downloaded_bundles \
   "$metadata_file" \
-  "$bundles_directory"
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
+
+public_key_file=$temporary_directory/public-key.gpg
+site_directory=$temporary_directory/site
+printf 'public key\n' > "$public_key_file"
+
+expect_success \
+  "site generation supports every registered application" \
+  env \
+  APP_REGISTRY="$multi_app_registry" \
+  "$repository_root/scripts/render-site.sh" \
+  "$public_key_file" \
+  "$site_directory"
+
+for path in \
+  "$site_directory/index.html" \
+  "$site_directory/io.github.astrovm.AdventureMods.flatpakref" \
+  "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" \
+  "$site_directory/io.github.astrovm.TestApp.flatpakref" \
+  "$site_directory/apps/io.github.astrovm.TestApp/install/index.html"; do
+  if [ ! -s "$path" ]; then
+    echo "not ok - generated site is missing $path" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Install Adventure Mods" "$site_directory/index.html" ||
+  ! grep -Fq "Install Test App" "$site_directory/index.html" ||
+  grep -Fq "APP_CARDS" "$site_directory/index.html" ||
+  grep -ERq '@[A-Z_]+@' "$site_directory"; then
+  echo "not ok - generated site contains incorrect application content" >&2
+  exit 1
+fi
+pass "generated site contains all application metadata"
 
 mock_bin=$temporary_directory/mock-bin
 mkdir "$mock_bin"

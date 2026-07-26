@@ -1,0 +1,11 @@
+[Flatpak Ref]
+Version=1
+Name=@APP_ID@
+Branch=@APP_BRANCH@
+Title=@APP_NAME@
+Comment=@APP_SUMMARY@
+IsRuntime=false
+Url=https://flatpak.4st.li/repo/
+RuntimeRepo=@RUNTIME_REPOSITORY@
+SuggestRemoteName=astrovm
+GPGKey=@GPG_KEY@

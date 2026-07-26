@@ -10,6 +10,8 @@ if [ "$#" -ne 1 ]; then
   exit 2
 fi
 
+validate_app_registry
+
 site_directory=$(realpath -- "$1")
 repository_directory=$site_directory/repo
 repository_file=$site_directory/astrovm.flatpakrepo
@@ -20,8 +22,8 @@ for path in \
   "$repository_directory/summary.sig" \
   "$site_directory/astrovm.gpg" \
   "$repository_file" \
-  "$site_directory/styles.css" \
-  "$site_directory/io.github.astrovm.AdventureMods.flatpakref"; do
+  "$site_directory/index.html" \
+  "$site_directory/styles.css"; do
   if [ ! -s "$path" ]; then
     error "Generated repository file is missing or empty: $path"
     exit 1
@@ -29,9 +31,21 @@ for path in \
 done
 
 encoded_public_key=$(base64 --wrap=0 "$site_directory/astrovm.gpg")
-for descriptor in \
-  "$repository_file" \
-  "$site_directory/io.github.astrovm.AdventureMods.flatpakref"; do
+descriptors=("$repository_file")
+while IFS= read -r repository; do
+  app_id=$(app_value "$repository" id)
+  descriptor=$site_directory/$app_id.flatpakref
+  install_page=$site_directory/apps/$app_id/install/index.html
+
+  if [ ! -s "$descriptor" ] || [ ! -s "$install_page" ]; then
+    error "Generated application files are missing or empty for $app_id"
+    exit 1
+  fi
+
+  descriptors+=("$descriptor")
+done < <(app_repositories)
+
+for descriptor in "${descriptors[@]}"; do
   if ! grep -Fxq "GPGKey=$encoded_public_key" "$descriptor"; then
     error "Embedded GPG key does not match astrovm.gpg: $descriptor"
     exit 1
@@ -56,18 +70,20 @@ mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
 
 flatpak remote-add --user --if-not-exists astrovm-verification "$local_repository_file"
 
-for arch in "${EXPECTED_ARCHES[@]}"; do
-  expected=$(expected_ref "$arch")
+while IFS= read -r arch; do
+  expected=$(expected_refs_for_arch "$arch")
   actual=$(flatpak remote-ls \
     --user \
     --arch="$arch" \
     --columns=ref \
-    astrovm-verification)
+    astrovm-verification |
+    sort)
 
   if [ "$actual" != "$expected" ]; then
-    error "Flatpak client expected $expected, received: ${actual:-nothing}"
+    error "Flatpak client received unexpected refs for $arch"
+    printf 'Expected:\n%s\nActual:\n%s\n' "$expected" "${actual:-nothing}" >&2
     exit 1
   fi
-done
+done < <(all_architectures)
 
-echo "Verified signed Flatpak repository for ${EXPECTED_ARCHES[*]}"
+echo "Verified signed Flatpak repository"
