@@ -9,6 +9,7 @@ publishing, verification, health checks, and the generated website.
 ## Applications
 
 - [Adventure Mods](https://flatpak.4st.li/apps/io.github.astrovm.AdventureMods/install/)
+- [PkgDeck](https://flatpak.4st.li/apps/io.github.astrovm.PkgDeck/install/)
 
 Each application has a generated install page and `.flatpakref` file.
 

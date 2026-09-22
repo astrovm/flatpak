@@ -12,6 +12,19 @@
         "aarch64"
       ],
       "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+    },
+    {
+      "repository": "astrovm/PkgDeck",
+      "id": "io.github.astrovm.PkgDeck",
+      "name": "PkgDeck",
+      "summary": "Manage software from one fast GUI and CLI.",
+      "bundle_prefix": "PkgDeck",
+      "branch": "master",
+      "architectures": [
+        "x86_64",
+        "aarch64"
+      ],
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
     }
   ]
 }

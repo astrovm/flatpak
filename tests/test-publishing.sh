@@ -80,7 +80,7 @@ expect_success \
     source "$1"
     validate_app_registry
     validate_source_repository "astrovm/TestApp"
-    [ "$(all_expected_refs | wc -l)" -eq 3 ]
+    [ "$(all_expected_refs | wc -l)" -eq 5 ]
   ' \
   _ \
   "$repository_root/scripts/lib/publish-common.sh"
@@ -108,7 +108,7 @@ printf '%s\n' \
   > "$ostree_mock_directory/ostree"
 chmod +x "$ostree_mock_directory/ostree"
 
-registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable'
+registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.PkgDeck/aarch64/master\napp/io.github.astrovm.PkgDeck/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable'
 # The subshell expands its own positional parameter.
 # shellcheck disable=SC2016
 expect_success \
@@ -239,6 +239,8 @@ for path in \
   "$site_directory/index.html" \
   "$site_directory/io.github.astrovm.AdventureMods.flatpakref" \
   "$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html" \
+  "$site_directory/io.github.astrovm.PkgDeck.flatpakref" \
+  "$site_directory/apps/io.github.astrovm.PkgDeck/install/index.html" \
   "$site_directory/io.github.astrovm.TestApp.flatpakref" \
   "$site_directory/apps/io.github.astrovm.TestApp/install/index.html"; do
   if [ ! -s "$path" ]; then
@@ -248,6 +250,7 @@ for path in \
 done
 
 if ! grep -Fq "Adventure Mods" "$site_directory/index.html" ||
+  ! grep -Fq "PkgDeck" "$site_directory/index.html" ||
   ! grep -Fq "Test App" "$site_directory/index.html" ||
   ! grep -Fq "/apps/io.github.astrovm.AdventureMods/install/" \
     "$site_directory/index.html" ||
