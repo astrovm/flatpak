@@ -96,6 +96,16 @@ expect_failure \
   _ \
   "$repository_root/scripts/lib/publish-common.sh"
 
+jq '.apps[1].versioned_bundles = "yes"' "$APP_REGISTRY" > "$temporary_directory/invalid-versioned-apps.json"
+# shellcheck disable=SC2016
+expect_failure \
+  "versioned bundle setting must be boolean" \
+  env \
+  APP_REGISTRY="$temporary_directory/invalid-versioned-apps.json" \
+  bash -c 'source "$1"; validate_app_registry' \
+  _ \
+  "$repository_root/scripts/lib/publish-common.sh"
+
 ostree_mock_directory=$temporary_directory/ostree-mock
 mkdir "$ostree_mock_directory"
 # The single quotes write a mock that expands its own environment.
@@ -222,6 +232,40 @@ expect_failure \
   "$metadata_file" \
   "$bundles_directory" \
   "astrovm/AdventureMods"
+
+versioned_bundles=$temporary_directory/versioned-bundles
+versioned_metadata=$temporary_directory/versioned-release.json
+mkdir "$versioned_bundles"
+printf 'arm bundle\n' > "$versioned_bundles/PkgDeck-v9.8.7-aarch64.flatpak"
+printf 'x86 bundle\n' > "$versioned_bundles/PkgDeck-v9.8.7-x86_64.flatpak"
+arm_digest=sha256:$(sha256sum "$versioned_bundles/PkgDeck-v9.8.7-aarch64.flatpak" | cut -d ' ' -f 1)
+x86_digest=sha256:$(sha256sum "$versioned_bundles/PkgDeck-v9.8.7-x86_64.flatpak" | cut -d ' ' -f 1)
+jq -n \
+  --arg arm_digest "$arm_digest" \
+  --arg x86_digest "$x86_digest" \
+  '{tag_name: "v9.8.7", draft: false, prerelease: false, immutable: true,
+   assets: [
+     {name: "PkgDeck-v9.8.7-aarch64.flatpak", digest: $arm_digest},
+     {name: "PkgDeck-v9.8.7-x86_64.flatpak", digest: $x86_digest}
+   ]}' > "$versioned_metadata"
+if [ "$(expected_bundle_name astrovm/PkgDeck x86_64 v9.8.7)" != "PkgDeck-v9.8.7-x86_64.flatpak" ]; then
+  echo "not ok - versioned bundle name is incorrect" >&2
+  exit 1
+fi
+pass "versioned bundle names use the release tag"
+expect_success \
+  "versioned bundles and digests are accepted" \
+  validate_downloaded_bundles \
+  "$versioned_metadata" \
+  "$versioned_bundles" \
+  "astrovm/PkgDeck"
+mv "$versioned_bundles/PkgDeck-v9.8.7-x86_64.flatpak" "$versioned_bundles/PkgDeck-x86_64.flatpak"
+expect_failure \
+  "unversioned alias is rejected for versioned releases" \
+  validate_downloaded_bundles \
+  "$versioned_metadata" \
+  "$versioned_bundles" \
+  "astrovm/PkgDeck"
 
 public_key_file=$temporary_directory/public-key.gpg
 site_directory=$temporary_directory/site

@@ -34,6 +34,7 @@ validate_app_registry()
           and (.name | text)
           and (.summary | text)
           and (.bundle_prefix | text and test("^[A-Za-z0-9_.-]+$"))
+          and ((.versioned_bundles // false) | type == "boolean")
           and (.branch | text and test("^[A-Za-z0-9_.-]+$"))
           and (
             .architectures
@@ -174,8 +175,16 @@ expected_bundle_name()
 {
   local repository=$1
   local arch=$2
+  local tag=${3:-}
+  local prefix
 
-  printf '%s-%s.flatpak\n' "$(app_value "$repository" bundle_prefix)" "$arch"
+  prefix=$(app_value "$repository" bundle_prefix)
+  if [ "$(app_value "$repository" versioned_bundles)" = true ]; then
+    validate_release_tag "$tag" || return 1
+    prefix=$prefix-$tag
+  fi
+
+  printf '%s-%s.flatpak\n' "$prefix" "$arch"
 }
 
 expected_ref()
@@ -211,11 +220,12 @@ validate_downloaded_bundles()
   local metadata_file=$1
   local bundles_directory=$2
   local repository=$3
-  local arch bundle bundle_name expected_digest actual_digest
+  local arch bundle bundle_name expected_digest actual_digest release_tag
   local -a downloaded_bundles
   local -a architectures
 
   mapfile -t architectures < <(app_architectures "$repository")
+  release_tag=$(jq -er '.tag_name' "$metadata_file")
 
   mapfile -d '' downloaded_bundles < <(
     find "$bundles_directory" -maxdepth 1 -type f -name '*.flatpak' -print0 |
@@ -228,7 +238,7 @@ validate_downloaded_bundles()
   fi
 
   for arch in "${architectures[@]}"; do
-    bundle_name=$(expected_bundle_name "$repository" "$arch")
+    bundle_name=$(expected_bundle_name "$repository" "$arch" "$release_tag")
     bundle=$bundles_directory/$bundle_name
 
     if [ ! -f "$bundle" ]; then

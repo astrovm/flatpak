@@ -81,7 +81,7 @@ mkdir -p \
 ostree fsck --quiet --repo="$repository_directory"
 
 for arch in "${app_arches[@]}"; do
-  bundle=$bundles_directory/$(expected_bundle_name "$source_repository" "$arch")
+  bundle=$bundles_directory/$(expected_bundle_name "$source_repository" "$arch" "$release_tag")
   expected=$(expected_ref "$source_repository" "$arch")
   inspection_repository=$working_directory/inspect-$arch
 
