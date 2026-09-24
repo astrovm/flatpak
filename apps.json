@@ -19,7 +19,6 @@
       "name": "PkgDeck",
       "summary": "Manage software from one fast GUI and CLI.",
       "bundle_prefix": "PkgDeck",
-      "versioned_bundles": true,
       "branch": "master",
       "architectures": [
         "x86_64",

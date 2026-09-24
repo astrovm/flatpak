@@ -96,16 +96,6 @@ expect_failure \
   _ \
   "$repository_root/scripts/lib/publish-common.sh"
 
-jq '.apps[1].versioned_bundles = "yes"' "$APP_REGISTRY" > "$temporary_directory/invalid-versioned-apps.json"
-# shellcheck disable=SC2016
-expect_failure \
-  "versioned bundle setting must be boolean" \
-  env \
-  APP_REGISTRY="$temporary_directory/invalid-versioned-apps.json" \
-  bash -c 'source "$1"; validate_app_registry' \
-  _ \
-  "$repository_root/scripts/lib/publish-common.sh"
-
 ostree_mock_directory=$temporary_directory/ostree-mock
 mkdir "$ostree_mock_directory"
 # The single quotes write a mock that expands its own environment.
@@ -232,6 +222,25 @@ expect_failure \
   "$metadata_file" \
   "$bundles_directory" \
   "astrovm/AdventureMods"
+rm "$bundles_directory/unexpected.flatpak"
+mv "$bundles_directory/AdventureMods-aarch64.flatpak" "$bundles_directory/AdventureMods-v1.2.3-aarch64.flatpak"
+mv "$bundles_directory/AdventureMods-x86_64.flatpak" "$bundles_directory/AdventureMods-v1.2.3-x86_64.flatpak"
+jq '.assets[].name |= sub("AdventureMods-"; "AdventureMods-v1.2.3-")' \
+  "$metadata_file" > "$temporary_directory/adventuremods-versioned.json"
+expect_success \
+  "versioned AdventureMods bundles are accepted by the same publisher" \
+  validate_downloaded_bundles \
+  "$temporary_directory/adventuremods-versioned.json" \
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
+jq '.assets += [{name: "AdventureMods-x86_64.flatpak", digest: "sha256:unused"}]' \
+  "$temporary_directory/adventuremods-versioned.json" > "$temporary_directory/ambiguous.json"
+expect_failure \
+  "ambiguous release bundles are rejected" \
+  validate_downloaded_bundles \
+  "$temporary_directory/ambiguous.json" \
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
 
 versioned_bundles=$temporary_directory/versioned-bundles
 versioned_metadata=$temporary_directory/versioned-release.json
@@ -248,7 +257,7 @@ jq -n \
      {name: "PkgDeck-v9.8.7-aarch64.flatpak", digest: $arm_digest},
      {name: "PkgDeck-v9.8.7-x86_64.flatpak", digest: $x86_digest}
    ]}' > "$versioned_metadata"
-if [ "$(expected_bundle_name astrovm/PkgDeck x86_64 v9.8.7)" != "PkgDeck-v9.8.7-x86_64.flatpak" ]; then
+if [ "$(release_bundle_name "$versioned_metadata" astrovm/PkgDeck x86_64)" != "PkgDeck-v9.8.7-x86_64.flatpak" ]; then
   echo "not ok - versioned bundle name is incorrect" >&2
   exit 1
 fi
