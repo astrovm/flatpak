@@ -222,6 +222,59 @@ expect_failure \
   "$metadata_file" \
   "$bundles_directory" \
   "astrovm/AdventureMods"
+rm "$bundles_directory/unexpected.flatpak"
+mv "$bundles_directory/AdventureMods-aarch64.flatpak" "$bundles_directory/AdventureMods-v1.2.3-aarch64.flatpak"
+mv "$bundles_directory/AdventureMods-x86_64.flatpak" "$bundles_directory/AdventureMods-v1.2.3-x86_64.flatpak"
+jq '.assets[].name |= sub("AdventureMods-"; "AdventureMods-v1.2.3-")' \
+  "$metadata_file" > "$temporary_directory/adventuremods-versioned.json"
+expect_success \
+  "versioned AdventureMods bundles are accepted by the same publisher" \
+  validate_downloaded_bundles \
+  "$temporary_directory/adventuremods-versioned.json" \
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
+jq '.assets += [{name: "AdventureMods-x86_64.flatpak", digest: "sha256:unused"}]' \
+  "$temporary_directory/adventuremods-versioned.json" > "$temporary_directory/ambiguous.json"
+expect_failure \
+  "ambiguous release bundles are rejected" \
+  validate_downloaded_bundles \
+  "$temporary_directory/ambiguous.json" \
+  "$bundles_directory" \
+  "astrovm/AdventureMods"
+
+versioned_bundles=$temporary_directory/versioned-bundles
+versioned_metadata=$temporary_directory/versioned-release.json
+mkdir "$versioned_bundles"
+printf 'arm bundle\n' > "$versioned_bundles/PkgDeck-v9.8.7-aarch64.flatpak"
+printf 'x86 bundle\n' > "$versioned_bundles/PkgDeck-v9.8.7-x86_64.flatpak"
+arm_digest=sha256:$(sha256sum "$versioned_bundles/PkgDeck-v9.8.7-aarch64.flatpak" | cut -d ' ' -f 1)
+x86_digest=sha256:$(sha256sum "$versioned_bundles/PkgDeck-v9.8.7-x86_64.flatpak" | cut -d ' ' -f 1)
+jq -n \
+  --arg arm_digest "$arm_digest" \
+  --arg x86_digest "$x86_digest" \
+  '{tag_name: "v9.8.7", draft: false, prerelease: false, immutable: true,
+   assets: [
+     {name: "PkgDeck-v9.8.7-aarch64.flatpak", digest: $arm_digest},
+     {name: "PkgDeck-v9.8.7-x86_64.flatpak", digest: $x86_digest}
+   ]}' > "$versioned_metadata"
+if [ "$(release_bundle_name "$versioned_metadata" astrovm/PkgDeck x86_64)" != "PkgDeck-v9.8.7-x86_64.flatpak" ]; then
+  echo "not ok - versioned bundle name is incorrect" >&2
+  exit 1
+fi
+pass "versioned bundle names use the release tag"
+expect_success \
+  "versioned bundles and digests are accepted" \
+  validate_downloaded_bundles \
+  "$versioned_metadata" \
+  "$versioned_bundles" \
+  "astrovm/PkgDeck"
+mv "$versioned_bundles/PkgDeck-v9.8.7-x86_64.flatpak" "$versioned_bundles/PkgDeck-x86_64.flatpak"
+expect_failure \
+  "unversioned alias is rejected for versioned releases" \
+  validate_downloaded_bundles \
+  "$versioned_metadata" \
+  "$versioned_bundles" \
+  "astrovm/PkgDeck"
 
 public_key_file=$temporary_directory/public-key.gpg
 site_directory=$temporary_directory/site

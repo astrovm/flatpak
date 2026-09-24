@@ -170,12 +170,22 @@ validate_output_directory()
   fi
 }
 
-expected_bundle_name()
+release_bundle_name()
 {
-  local repository=$1
-  local arch=$2
+  local metadata_file=$1
+  local repository=$2
+  local arch=$3
+  local prefix tag
 
-  printf '%s-%s.flatpak\n' "$(app_value "$repository" bundle_prefix)" "$arch"
+  prefix=$(app_value "$repository" bundle_prefix)
+  tag=$(jq -er '.tag_name' "$metadata_file")
+  validate_release_tag "$tag" || return 1
+  jq -er \
+    --arg versioned "$prefix-$tag-$arch.flatpak" \
+    --arg legacy "$prefix-$arch.flatpak" \
+    '[.assets[].name | select(. == $versioned or . == $legacy)]
+      | if length == 1 then .[0] else empty end' \
+    "$metadata_file"
 }
 
 expected_ref()
@@ -228,7 +238,10 @@ validate_downloaded_bundles()
   fi
 
   for arch in "${architectures[@]}"; do
-    bundle_name=$(expected_bundle_name "$repository" "$arch")
+    if ! bundle_name=$(release_bundle_name "$metadata_file" "$repository" "$arch"); then
+      error "Release needs one Flatpak bundle for $repository on $arch"
+      return 1
+    fi
     bundle=$bundles_directory/$bundle_name
 
     if [ ! -f "$bundle" ]; then

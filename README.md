@@ -75,10 +75,12 @@ Add one object to `apps.json`:
 }
 ```
 
-Release bundles must use the configured prefix and architecture, such as
-`Example-aarch64.flatpak`. The first publication adds the app to the existing
-OSTree repository and generates its website card, install page, and
-`.flatpakref` file.
+Use versioned release bundles such as `Example-v1.2.3-aarch64.flatpak`.
+The publisher selects exactly one bundle per architecture using the release
+tag and verifies its release digest and Flatpak ref. Previously published
+unversioned bundles remain publishable. The first publication adds the app to
+the existing OSTree repository and generates its website card, install page,
+and `.flatpakref` file.
 
 Removing an application from `apps.json` requires a separate repository
 migration because unregistered refs are intentionally rejected.
