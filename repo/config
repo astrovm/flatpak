@@ -1,0 +1,11 @@
+[core]
+repo_version=1
+mode=archive-z2
+indexed-deltas=true
+
+[flatpak]
+title=astrovm Flatpak Repository
+comment=Official Flatpak applications published by astrovm
+description=Install and update applications published by astrovm.
+homepage=https://4st.li/
+default-branch=master

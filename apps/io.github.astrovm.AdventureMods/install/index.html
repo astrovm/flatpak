@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Install Adventure Mods</title>
+    <meta
+      name="description"
+      content="Install Adventure Mods on Linux with Flatpak. The easiest way to manage Sonic Adventure mods on Linux."
+    >
+    <meta name="theme-color" content="#07111f">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Install Adventure Mods">
+    <meta property="og:description" content="The easiest way to manage Sonic Adventure mods on Linux.">
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307111f'/%3E%3Crect x='2' y='2' width='60' height='60' rx='12' fill='none' stroke='%238fe7d6' stroke-opacity='.4' stroke-width='3'/%3E%3Ctext x='32' y='44' font-family='system-ui,sans-serif' font-size='32' font-weight='800' fill='%238fe7d6' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E"
+    >
+    <link rel="stylesheet" href="/styles.css?v=6e3491720847">
+  </head>
+  <body>
+    <main class="page">
+      <header class="site-header">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true">A</span>
+          <span>astrovm Flatpak Repository</span>
+        </a>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">Install via Flatpak</p>
+        <h1>Adventure Mods</h1>
+        <p class="lede">The easiest way to manage Sonic Adventure mods on Linux.</p>
+        <div class="arch-list" aria-label="Supported architectures">
+          <span class="arch-badge">x86_64</span> <span class="arch-badge">aarch64</span>
+        </div>
+        <div class="actions">
+          <a
+            id="install-link"
+            class="button button-primary"
+            href="flatpak+https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref"
+          >
+            Open software manager
+          </a>
+          <a class="button" href="/">
+            Back to repository
+          </a>
+          <a class="button" href="https://github.com/astrovm/AdventureMods">
+            <svg
+              class="github-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M10.226 17.284c-2.965-.36-5.054-2.493-5.054-5.256 0-1.123.404-2.336 1.078-3.144-.292-.741-.247-2.314.09-2.965.898-.112 2.111.36 2.83 1.01.853-.269 1.752-.404 2.853-.404 1.1 0 1.999.135 2.807.382.696-.629 1.932-1.1 2.83-.988.315.606.36 2.179.067 2.942.72.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234.763.494 1.28 1.572 1.28 2.807v2.336c0 .674.561 1.056 1.235.786 4.066-1.55 7.255-5.615 7.255-10.646C23.5 6.188 18.334 1 11.978 1 5.62 1 .5 6.188.5 12.545c0 4.986 3.167 9.12 7.435 10.669.606.225 1.19-.18 1.19-.786V20.63a2.9 2.9 0 0 1-1.078.224c-1.483 0-2.359-.808-2.987-2.313-.247-.607-.517-.966-1.034-1.033-.27-.023-.359-.135-.359-.27 0-.27.45-.471.898-.471.652 0 1.213.404 1.797 1.235.45.651.921.943 1.483.943.561 0 .92-.202 1.437-.719.382-.381.674-.718.944-.943"/>
+            </svg>
+            <span>View on GitHub</span>
+          </a>
+        </div>
+        <p class="fallback">
+          Nothing happened?
+          <a href="/io.github.astrovm.AdventureMods.flatpakref">
+            Download the installer
+          </a>
+          or use the terminal command below.
+        </p>
+      </section>
+
+      <details class="terminal">
+        <summary>Install from a terminal</summary>
+        <div class="command-row">
+          <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref</code></pre>
+          <button
+            class="copy-button"
+            type="button"
+            data-copy="flatpak install https://flatpak.4st.li/io.github.astrovm.AdventureMods.flatpakref"
+          >
+            Copy
+          </button>
+        </div>
+      </details>
+    </main>
+    <script>
+      try {
+        window.location.replace(document.getElementById("install-link").href);
+      } catch {
+        // This browser cannot open the software manager; the page stays put.
+      }
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+          } catch {
+            const field = document.createElement("textarea");
+            field.value = button.dataset.copy;
+            document.body.append(field);
+            field.select();
+            document.execCommand("copy");
+            field.remove();
+          }
+          button.textContent = "Copied";
+          setTimeout(() => {
+            button.textContent = "Copy";
+          }, 2000);
+        });
+      });
+    </script>
+  </body>
+</html>
