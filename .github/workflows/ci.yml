@@ -18,7 +18,7 @@ jobs:
       - name: Install validation tools
         run: |
           sudo apt update
-          sudo apt install -y jq shellcheck tidy
+          sudo apt install -y jq kcov shellcheck tidy
 
       - name: Validate shell scripts
         run: |
@@ -29,7 +29,12 @@ jobs:
         run: jq -e . apps.json >/dev/null
 
       - name: Test publishing logic
-        run: tests/test-publishing.sh
+        run: |
+          tests/test-publishing.sh
+          tests/test-scripts.sh
+
+      - name: Measure test coverage
+        run: tests/coverage.sh
 
       - name: Validate HTML templates
         run: tidy -errors -quiet templates/*.html
