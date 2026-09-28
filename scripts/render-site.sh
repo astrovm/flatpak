@@ -12,10 +12,11 @@ if [ "$#" -ne 2 ]; then
 fi
 
 public_key_file=$(realpath -- "$1")
-output_directory=$(realpath --canonicalize-missing -- "$2")
 
 validate_app_registry
-validate_output_directory "$output_directory" "$repository_root"
+# Validate the argument as given: resolving it first would follow symbolic links.
+validate_output_directory "$2" "$repository_root"
+output_directory=$(realpath --canonicalize-missing -- "$2")
 
 public_key=$(base64 --wrap=0 "$public_key_file")
 if [ -z "$public_key" ]; then
@@ -60,18 +61,20 @@ EOF
 render_index()
 {
   local line repository
+  local -a repositories template_lines
 
-  while IFS= read -r line || [ -n "$line" ]; do
+  mapfile -t repositories < <(app_repositories)
+  mapfile -t template_lines < "$repository_root/templates/index.html"
+  for line in "${template_lines[@]}"; do
     if [ "$line" = "          <!-- APP_CARDS -->" ]; then
-      while IFS= read -r repository; do
+      for repository in "${repositories[@]}"; do
         render_app_card "$repository"
-      done < <(app_repositories)
+      done
     else
       line=${line//@STYLES_VERSION@/$stylesheet_version}
       printf '%s\n' "$line"
     fi
-  done < "$repository_root/templates/index.html" \
-    > "$output_directory/index.html"
+  done
 }
 
 render_app_files()
@@ -79,6 +82,7 @@ render_app_files()
   local repository=$1
   local app_id app_branch app_name app_summary runtime_repository
   local app_arch_badges install_directory
+  local -a architectures
 
   app_id=$(app_value "$repository" id)
   app_branch=$(app_value "$repository" branch)
@@ -86,11 +90,8 @@ render_app_files()
   app_summary=$(app_value "$repository" summary)
   runtime_repository=$(app_value "$repository" runtime_repository)
 
-  app_arch_badges=$(
-    while IFS= read -r architecture; do
-      printf '<span class="arch-badge">%s</span> ' "$architecture"
-    done < <(app_architectures "$repository")
-  )
+  mapfile -t architectures < <(app_architectures "$repository")
+  app_arch_badges=$(printf '<span class="arch-badge">%s</span> ' "${architectures[@]}")
   app_arch_badges=${app_arch_badges% }
 
   sed \
@@ -120,7 +121,7 @@ sed "s|@GPG_KEY@|$(escape_sed_replacement "$public_key")|" \
   "$repository_root/templates/astrovm.flatpakrepo.in" \
   > "$output_directory/astrovm.flatpakrepo"
 cp "$public_key_file" "$output_directory/astrovm.gpg"
-render_index
+render_index > "$output_directory/index.html"
 cp "$stylesheet_file" "$output_directory/styles.css"
 
 while IFS= read -r repository; do

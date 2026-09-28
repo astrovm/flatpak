@@ -21,9 +21,9 @@ validate_source_repository()
   fi
 }
 
-validate_app_registry()
+app_registry_is_valid()
 {
-  if ! jq -e '
+  jq -e -f /dev/stdin "$APP_REGISTRY" >/dev/null <<'JQ'
     def text:
       type == "string" and length > 0 and (test("[\t\r\n]") | not);
     (.apps | type == "array" and length > 0)
@@ -52,7 +52,12 @@ validate_app_registry()
         [.apps[].id] as $values
         | $values | length == (unique | length)
       )
-  ' "$APP_REGISTRY" >/dev/null; then
+JQ
+}
+
+validate_app_registry()
+{
+  if ! app_registry_is_valid; then
     error "Invalid application registry: $APP_REGISTRY"
     return 1
   fi
@@ -104,25 +109,23 @@ all_architectures()
 
 all_expected_refs()
 {
-  jq -r '
+  jq -r -f /dev/stdin "$APP_REGISTRY" <<'JQ'
     .apps[]
     | . as $app
     | .architectures[]
     | "app/\($app.id)/\(.)/\($app.branch)"
-  ' "$APP_REGISTRY"
+JQ
 }
 
 expected_refs_for_arch()
 {
   local arch=$1
 
-  jq -r \
-    --arg arch "$arch" \
-    '.apps[]
-      | select(.architectures | index($arch))
-      | "app/\(.id)/\($arch)/\(.branch)"' \
-    "$APP_REGISTRY" |
-    sort
+  jq -r --arg arch "$arch" -f /dev/stdin "$APP_REGISTRY" <<'JQ' | sort
+    .apps[]
+    | select(.architectures | index($arch))
+    | "app/\(.id)/\($arch)/\(.branch)"
+JQ
 }
 
 validate_release_tag()
@@ -175,17 +178,17 @@ release_bundle_name()
   local metadata_file=$1
   local repository=$2
   local arch=$3
-  local prefix tag
+  local prefix tag versioned legacy
 
   prefix=$(app_value "$repository" bundle_prefix)
   tag=$(jq -er '.tag_name' "$metadata_file")
   validate_release_tag "$tag" || return 1
-  jq -er \
-    --arg versioned "$prefix-$tag-$arch.flatpak" \
-    --arg legacy "$prefix-$arch.flatpak" \
-    '[.assets[].name | select(. == $versioned or . == $legacy)]
-      | if length == 1 then .[0] else empty end' \
-    "$metadata_file"
+  versioned=$prefix-$tag-$arch.flatpak
+  legacy=$prefix-$arch.flatpak
+  jq -er --arg versioned "$versioned" --arg legacy "$legacy" -f /dev/stdin "$metadata_file" <<'JQ'
+    [.assets[].name | select(. == $versioned or . == $legacy)]
+    | if length == 1 then .[0] else empty end
+JQ
 }
 
 expected_ref()
@@ -206,14 +209,22 @@ validate_release_metadata()
 
   if ! jq -e \
     --arg tag "$expected_tag" \
-    '.tag_name == $tag
-      and .draft == false
-      and .prerelease == false
-      and .immutable == true' \
+    '.tag_name == $tag and .draft == false and .prerelease == false and .immutable == true' \
     "$metadata_file" >/dev/null; then
     error "Release $expected_tag must be published, immutable, and not a prerelease"
     return 1
   fi
+}
+
+unique_asset_digest()
+{
+  local metadata_file=$1
+  local name=$2
+
+  jq -er --arg name "$name" -f /dev/stdin "$metadata_file" <<'JQ'
+    [.assets[] | select(.name == $name) | .digest]
+    | if length == 1 then .[0] else empty end
+JQ
 }
 
 validate_downloaded_bundles()
@@ -227,10 +238,7 @@ validate_downloaded_bundles()
 
   mapfile -t architectures < <(app_architectures "$repository")
 
-  mapfile -d '' downloaded_bundles < <(
-    find "$bundles_directory" -maxdepth 1 -type f -name '*.flatpak' -print0 |
-      sort -z
-  )
+  mapfile -d '' downloaded_bundles < <(find "$bundles_directory" -maxdepth 1 -type f -name '*.flatpak' -print0)
 
   if [ "${#downloaded_bundles[@]}" -ne "${#architectures[@]}" ]; then
     error "Expected ${#architectures[@]} Flatpak bundles, found ${#downloaded_bundles[@]}"
@@ -249,11 +257,7 @@ validate_downloaded_bundles()
       return 1
     fi
 
-    if ! expected_digest=$(jq -er \
-      --arg name "$bundle_name" \
-      '[.assets[] | select(.name == $name) | .digest]
-        | if length == 1 then .[0] else empty end' \
-      "$metadata_file"); then
+    if ! expected_digest=$(unique_asset_digest "$metadata_file" "$bundle_name"); then
       error "Release metadata has no unique digest for $bundle_name"
       return 1
     fi
@@ -275,19 +279,21 @@ validate_repository_refs()
 {
   local repository_directory=$1
   local arch ref
+  local -a architectures expected_refs refs
   local -A expected_app_refs=()
   local -A expected_appstream_refs=()
   local -A found_app_refs=()
-  local -a refs
 
-  while IFS= read -r ref; do
+  mapfile -t expected_refs < <(all_expected_refs)
+  for ref in "${expected_refs[@]}"; do
     expected_app_refs["$ref"]=1
-  done < <(all_expected_refs)
+  done
 
-  while IFS= read -r arch; do
+  mapfile -t architectures < <(all_architectures)
+  for arch in "${architectures[@]}"; do
     expected_appstream_refs["appstream/$arch"]=1
     expected_appstream_refs["appstream2/$arch"]=1
-  done < <(all_architectures)
+  done
 
   mapfile -t refs < <(ostree refs --repo="$repository_directory" | sort)
   for ref in "${refs[@]}"; do

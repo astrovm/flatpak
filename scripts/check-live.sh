@@ -36,12 +36,7 @@ flatpak remote-add \
 
 while IFS= read -r arch; do
   expected=$(expected_refs_for_arch "$arch")
-  actual=$(flatpak remote-ls \
-    --user \
-    --arch="$arch" \
-    --columns=ref \
-    astrovm |
-    sort)
+  actual=$(flatpak remote-ls --user --arch="$arch" --columns=ref astrovm | sort)
 
   if [ "$actual" != "$expected" ]; then
     error "Published repository has unexpected refs for $arch"

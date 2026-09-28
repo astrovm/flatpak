@@ -13,12 +13,13 @@ fi
 
 source_repository=$1
 release_tag=$2
-output_directory=$(realpath --canonicalize-missing -- "$3")
 
 validate_app_registry
 validate_source_repository "$source_repository"
 validate_release_tag "$release_tag"
-validate_output_directory "$output_directory" "$repository_root"
+# Validate the argument as given: resolving it first would follow symbolic links.
+validate_output_directory "$3" "$repository_root"
+output_directory=$(realpath --canonicalize-missing -- "$3")
 
 mapfile -t app_arches < <(app_architectures "$source_repository")
 

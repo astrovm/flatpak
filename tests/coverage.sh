@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Run the test suites under kcov and fail when line coverage of scripts/ is
-# below COVERAGE_MIN percent. kcov traces bash through xtrace, so continuation
-# lines of multi-line commands (such as jq programs) are reported as not run.
+# below COVERAGE_MIN percent. kcov attributes each traced command to a single
+# line, so executed code is reported as not run when it spans lines inside a
+# multi-line string, a multi-line $(...), or a redirected `done` in a function.
+# Put long jq programs in quoted heredocs passed with -f /dev/stdin instead.
 set -euo pipefail
 
 repository_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 coverage_directory=${COVERAGE_DIRECTORY:-$repository_root/coverage}
-coverage_minimum=${COVERAGE_MIN:-85}
+coverage_minimum=${COVERAGE_MIN:-100}
 
 for tool in kcov jq; do
   if ! command -v "$tool" >/dev/null 2>&1; then
