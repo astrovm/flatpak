@@ -88,7 +88,11 @@ EOF
 cat > "$mock_bin/gh" << 'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+printf '%s\n' "$*" >> "${MOCK_GH_LOG:-/dev/null}"
 case "$1 $2" in
+  "release view")
+    printf '%s\n' "$MOCK_LATEST_TAG"
+    ;;
   "api repos/"*)
     cat "$MOCK_RELEASE_METADATA"
     ;;
@@ -129,7 +133,10 @@ case "$1" in
     sort -u "$repository/refs-list"
     ;;
   fsck)
-    [ -z "${MOCK_OSTREE_CORRUPT:-}" ] || exit 1
+    if [ -n "${MOCK_OSTREE_CORRUPT:-}" ]; then
+      echo "error: fsck: corrupted object" >&2
+      exit 1
+    fi
     ;;
   summary)
     [ -s "$repository/summary" ]
@@ -191,7 +198,9 @@ cat > "$mock_bin/curl" << 'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 url=${!#}
-if [ -n "${MOCK_CURL_FAIL:-}" ] && [[ "$url" == *"$MOCK_CURL_FAIL"* ]]; then
+# MOCK_CURL_FAIL is a glob pattern matched against the whole URL.
+# shellcheck disable=SC2053
+if [ -n "${MOCK_CURL_FAIL:-}" ] && [[ "$url" == $MOCK_CURL_FAIL ]]; then
   echo "curl: (22) The requested URL returned error: 404" >&2
   exit 22
 fi
@@ -480,7 +489,7 @@ pass "health check reports a healthy repository"
 expect_failure \
   "the health check fails when an install page is missing" \
   "The requested URL returned error: 404" \
-  env MOCK_CURL_FAIL=/apps/io.github.astrovm.PkgDeck/install/ "$scripts/check-live.sh"
+  env MOCK_CURL_FAIL='*/apps/io.github.astrovm.PkgDeck/install/' "$scripts/check-live.sh"
 expect_failure \
   "the health check fails when the live repository lacks refs" \
   "Published repository has unexpected refs for aarch64" \
@@ -512,5 +521,265 @@ expect_success \
   "$scripts/resolve-request.sh" repository_dispatch "$dispatch_output"
 grep -Fxq "tag=v2.0.0" "$dispatch_output" || fail "dispatch tag was not emitted"
 pass "repository dispatch emits the requested tag"
+
+
+# Temporary directories are removed whether a script succeeds or fails.
+leftovers=$(find "$temporary_directory" -maxdepth 1 -name 'flatpak-*' -print)
+[ -z "$leftovers" ] || fail "scripts left temporary directories behind: $leftovers"
+pass "publishing, verification, and health checks clean up temporary directories"
+
+# Publishing rejects bad requests before contacting GitHub.
+gh_log=$temporary_directory/gh-log
+: > "$gh_log"
+expect_failure \
+  "publishing rejects unregistered source repositories" \
+  "Publishing from astrovm/Other is not allowed" \
+  env MOCK_GH_LOG="$gh_log" "$scripts/publish.sh" astrovm/Other v1.2.3 "$site"
+expect_failure \
+  "publishing rejects malformed release tags" \
+  "Invalid release tag: latest" \
+  env MOCK_GH_LOG="$gh_log" "$scripts/publish.sh" astrovm/AdventureMods latest "$site"
+[ ! -s "$gh_log" ] || fail "rejected publishing requests contacted GitHub: $(cat "$gh_log")"
+pass "rejected publishing requests never contact GitHub"
+
+broken_registry=$temporary_directory/broken-apps.json
+jq '.apps[0].runtime_repository = "http://example.com/"' \
+  "$repository_root/apps.json" > "$broken_registry"
+expect_failure \
+  "publishing refuses to run with an invalid registry" \
+  "Invalid application registry: $broken_registry" \
+  env APP_REGISTRY="$broken_registry" "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
+
+ln -s "$site" "$temporary_directory/site-link"
+expect_failure \
+  "publishing refuses a symbolic-link output directory" \
+  "Refusing to use a symbolic link as the output directory" \
+  "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$temporary_directory/site-link"
+expect_failure \
+  "site rendering refuses a symbolic-link output directory" \
+  "Refusing to use a symbolic link as the output directory" \
+  "$scripts/render-site.sh" "$site/astrovm.gpg" "$temporary_directory/site-link"
+expect_failure \
+  "publishing requires a non-empty output directory" \
+  "Output directory is required" \
+  "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 ""
+
+other_tag_metadata=$temporary_directory/other-tag.json
+jq '.tag_name = "v1.2.4"' "$release_metadata" > "$other_tag_metadata"
+expect_failure \
+  "publishing rejects metadata for a different release" \
+  "Release v1.2.3 must be published, immutable, and not a prerelease" \
+  env MOCK_RELEASE_METADATA="$other_tag_metadata" \
+  "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
+
+expect_failure \
+  "publishing stops when the existing repository is corrupt" \
+  "corrupted object" \
+  env MOCK_OSTREE_CORRUPT=1 "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
+if grep -Fq "Importing" "$temporary_directory/last-output"; then
+  fail "bundles were imported into a corrupt repository"
+fi
+pass "nothing is imported into a corrupt repository"
+
+double_ref_bundles=$temporary_directory/double-ref-bundles
+mkdir "$double_ref_bundles"
+cp "$bundles"/*.flatpak "$double_ref_bundles/"
+refs_for_app io.github.astrovm.AdventureMods master x86_64 aarch64 \
+  > "$double_ref_bundles/AdventureMods-v1.2.3-x86_64.flatpak"
+double_ref_metadata=$temporary_directory/double-ref.json
+write_release_metadata "$double_ref_metadata" "$double_ref_bundles"
+expect_failure \
+  "publishing rejects a bundle containing more than one ref" \
+  "AdventureMods-v1.2.3-x86_64.flatpak contains an unexpected ref: app/io.github.astrovm.AdventureMods/aarch64/master app/io.github.astrovm.AdventureMods/x86_64/master" \
+  env MOCK_RELEASE_METADATA="$double_ref_metadata" MOCK_BUNDLES="$double_ref_bundles" \
+  "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
+
+# A failure after importing must not replace the previously published site.
+site_snapshot()
+{
+  (cd "$site" && find . -path ./repo -prune -o -type f -print0 | sort -z | xargs -0 sha256sum)
+}
+site_before=$(site_snapshot)
+expect_failure \
+  "publishing fails when the public key cannot be exported" \
+  "Failed to export the Flatpak repository public key" \
+  env MOCK_GPG_EMPTY_EXPORT=1 "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
+[ "$(site_snapshot)" = "$site_before" ] || fail "a failed publish modified the website"
+pass "a failed publish leaves the previous website in place"
+
+expect_success \
+  "publishing the same release again succeeds" \
+  "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 4 ]; then
+  fail "republishing changed the set of application refs"
+fi
+pass "republishing a release keeps exactly one ref per application and architecture"
+
+# Verification failures.
+expect_failure \
+  "verification fails for a missing site" \
+  "Generated repository file is missing or empty: $temporary_directory/no-such-site/repo/config" \
+  "$scripts/verify-repository.sh" "$temporary_directory/no-such-site"
+expect_failure \
+  "verification fails when OSTree reports corruption" \
+  "corrupted object" \
+  env MOCK_OSTREE_CORRUPT=1 "$scripts/verify-repository.sh" "$site"
+if grep -Fq "Verified signed Flatpak repository" "$temporary_directory/last-output"; then
+  fail "a corrupt repository was reported as verified"
+fi
+pass "a corrupt repository is not reported as verified"
+
+rm -rf "$broken_site"
+cp -R "$site" "$broken_site"
+sed -i 's/^GPGKey=.*/GPGKey=b2xkIGtleQ==/' "$broken_site/io.github.astrovm.AdventureMods.flatpakref"
+expect_failure \
+  "verification names the descriptor with a stale key" \
+  "Embedded GPG key does not match astrovm.gpg: $broken_site/io.github.astrovm.AdventureMods.flatpakref" \
+  "$scripts/verify-repository.sh" "$broken_site"
+
+rm -rf "$broken_site"
+cp -R "$site" "$broken_site"
+printf 'app/io.github.astrovm.Unknown/x86_64/master\n' >> "$broken_site/repo/refs-list"
+expect_failure \
+  "verification rejects refs for unregistered applications" \
+  "Repository contains unexpected application ref: app/io.github.astrovm.Unknown/x86_64/master" \
+  "$scripts/verify-repository.sh" "$broken_site"
+
+# Live health check failures.
+expect_failure \
+  "the health check fails when the home page is down" \
+  "The requested URL returned error: 404" \
+  env MOCK_CURL_FAIL=https://flatpak.4st.li/ "$scripts/check-live.sh"
+expect_failure \
+  "the health check fails when the repository file is missing" \
+  "The requested URL returned error: 404" \
+  env MOCK_CURL_FAIL='*/astrovm.flatpakrepo' "$scripts/check-live.sh"
+expect_failure \
+  "the health check fails when an application descriptor is missing" \
+  "The requested URL returned error: 404" \
+  env MOCK_CURL_FAIL='*/io.github.astrovm.AdventureMods.flatpakref' "$scripts/check-live.sh"
+expect_failure \
+  "the health check rejects unregistered live refs" \
+  "Published repository has unexpected refs for aarch64" \
+  env MOCK_LIVE_REFS="$all_registered_refs"$'\napp/io.github.astrovm.Unknown/aarch64/master' \
+  "$scripts/check-live.sh"
+if ! grep -Fxq "Actual:" "$temporary_directory/last-output" ||
+  ! grep -Fxq "app/io.github.astrovm.Unknown/aarch64/master" "$temporary_directory/last-output"; then
+  fail "the health check did not show the unexpected live ref"
+fi
+pass "the health check shows which live refs differ"
+expect_failure \
+  "the health check reports an empty live repository" \
+  "Published repository has unexpected refs for aarch64" \
+  env MOCK_LIVE_REFS= "$scripts/check-live.sh"
+if ! grep -Fxq "nothing" "$temporary_directory/last-output"; then
+  fail "the health check did not report that no refs were served"
+fi
+pass "the health check says when the live repository serves nothing"
+
+# Site rendering keeps registry values intact in every output format.
+special_registry=$temporary_directory/special-apps.json
+jq '.apps[0] += {
+  name: "Mods & <Tools> | \\ \"Q\"",
+  summary: "Fast & safe | 100% \\ tested",
+  branch: "stable",
+  architectures: ["aarch64", "x86_64"],
+  runtime_repository: "https://example.com/repo?a=1&b=2|3"
+}' "$repository_root/apps.json" > "$special_registry"
+special_site=$temporary_directory/special-site
+printf 'key & | \\ bytes\n' > "$temporary_directory/special-key.gpg"
+expect_success \
+  "site rendering accepts registry values with special characters" \
+  env APP_REGISTRY="$special_registry" \
+  "$scripts/render-site.sh" "$temporary_directory/special-key.gpg" "$special_site"
+
+special_descriptor=$special_site/io.github.astrovm.AdventureMods.flatpakref
+special_page=$special_site/apps/io.github.astrovm.AdventureMods/install/index.html
+encoded_special_key=$(base64 --wrap=0 "$temporary_directory/special-key.gpg")
+# The single-quoted values are literal expected output.
+# shellcheck disable=SC2016
+if ! grep -Fxq 'Title=Mods & <Tools> | \ "Q"' "$special_descriptor" ||
+  ! grep -Fxq 'Comment=Fast & safe | 100% \ tested' "$special_descriptor" ||
+  ! grep -Fxq 'Branch=stable' "$special_descriptor" ||
+  ! grep -Fxq 'Name=io.github.astrovm.AdventureMods' "$special_descriptor" ||
+  ! grep -Fxq 'RuntimeRepo=https://example.com/repo?a=1&b=2|3' "$special_descriptor" ||
+  ! grep -Fxq "GPGKey=$encoded_special_key" "$special_descriptor" ||
+  ! grep -Fxq "GPGKey=$encoded_special_key" "$special_site/astrovm.flatpakrepo"; then
+  sed 's/^/# /' "$special_descriptor" >&2
+  fail "the application descriptor does not contain the exact registry values"
+fi
+pass "application descriptors contain registry values verbatim"
+
+if ! grep -Fq '<h1>Mods &amp; &lt;Tools&gt; | \ &quot;Q&quot;</h1>' "$special_page" ||
+  ! grep -Fq '<h2>Mods &amp; &lt;Tools&gt; | \ &quot;Q&quot;</h2>' "$special_site/index.html" ||
+  ! grep -Fq '<p>Fast &amp; safe | 100% \ tested</p>' "$special_site/index.html" ||
+  grep -Fq '<Tools>' "$special_page" "$special_site/index.html" ||
+  ! grep -Fxq '          <span class="arch-badge">aarch64</span> <span class="arch-badge">x86_64</span>' \
+    "$special_page"; then
+  fail "the generated pages do not escape registry values or list architectures in order"
+fi
+pass "generated pages escape registry values and list architectures in registry order"
+
+cmp -s "$temporary_directory/special-key.gpg" "$special_site/astrovm.gpg" ||
+  fail "the published key differs from the input key"
+cmp -s "$repository_root/templates/styles.css" "$special_site/styles.css" ||
+  fail "the stylesheet was not copied unchanged"
+stylesheet_version=$(sha256sum "$repository_root/templates/styles.css" | cut -c1-12)
+grep -Fq "styles.css?v=$stylesheet_version" "$special_site/index.html" ||
+  fail "the stylesheet version does not match its content"
+pass "the key and stylesheet are published unchanged with a content-based version"
+
+expect_failure \
+  "site rendering fails for a missing public key" \
+  "No such file or directory" \
+  "$scripts/render-site.sh" "$temporary_directory/no-such-key.gpg" "$temporary_directory/render"
+expect_failure \
+  "site rendering refuses to write into the source checkout" \
+  "Output directory cannot be the source repository" \
+  "$scripts/render-site.sh" "$site/astrovm.gpg" "$repository_root"
+
+# Request resolution.
+latest_output=$temporary_directory/latest-output
+printf 'existing=value\n' > "$latest_output"
+expect_success \
+  "a manual request without a tag uses the latest release" \
+  env MANUAL_REPOSITORY=astrovm/PkgDeck MANUAL_TAG= MOCK_LATEST_TAG=v3.0.0 \
+  "$scripts/resolve-request.sh" workflow_dispatch "$latest_output"
+grep -Fxq "::notice::No tag provided; using latest release v3.0.0" "$temporary_directory/last-output" ||
+  fail "the latest release was not announced"
+[ "$(cat "$latest_output")" = $'existing=value\nrepository=astrovm/PkgDeck\ntag=v3.0.0' ] ||
+  fail "request outputs were not appended to the existing output file"
+pass "resolved outputs are appended after existing workflow outputs"
+
+: > "$gh_log"
+explicit_output=$temporary_directory/explicit-output
+expect_success \
+  "a manual request with a tag is accepted" \
+  env MANUAL_REPOSITORY=astrovm/AdventureMods MANUAL_TAG=v1.0.0 MOCK_GH_LOG="$gh_log" \
+  "$scripts/resolve-request.sh" workflow_dispatch "$explicit_output"
+[ ! -s "$gh_log" ] || fail "an explicit tag still queried the latest release"
+[ "$(cat "$explicit_output")" = $'repository=astrovm/AdventureMods\ntag=v1.0.0' ] ||
+  fail "the explicit manual tag was not emitted"
+pass "an explicit tag is used without querying GitHub"
+
+invalid_latest_output=$temporary_directory/invalid-latest-output
+: > "$invalid_latest_output"
+expect_failure \
+  "a latest release with an invalid tag is rejected" \
+  "Invalid release tag: nightly" \
+  env MANUAL_REPOSITORY=astrovm/PkgDeck MANUAL_TAG= MOCK_LATEST_TAG=nightly \
+  "$scripts/resolve-request.sh" workflow_dispatch "$invalid_latest_output"
+expect_failure \
+  "a dispatch without a repository is rejected" \
+  "Publishing from  is not allowed" \
+  env -u DISPATCH_REPOSITORY DISPATCH_TAG=v1.0.0 \
+  "$scripts/resolve-request.sh" repository_dispatch "$invalid_latest_output"
+expect_failure \
+  "a dispatch for an unregistered repository is rejected" \
+  "Publishing from astrovm/Other is not allowed" \
+  env DISPATCH_REPOSITORY=astrovm/Other DISPATCH_TAG=v1.0.0 \
+  "$scripts/resolve-request.sh" repository_dispatch "$invalid_latest_output"
+[ ! -s "$invalid_latest_output" ] || fail "rejected requests wrote workflow outputs"
+pass "rejected requests write no workflow outputs"
 
 printf '1..%d\n' "$tests_run"

@@ -72,12 +72,7 @@ flatpak remote-add --user --if-not-exists astrovm-verification "$local_repositor
 
 while IFS= read -r arch; do
   expected=$(expected_refs_for_arch "$arch")
-  actual=$(flatpak remote-ls \
-    --user \
-    --arch="$arch" \
-    --columns=ref \
-    astrovm-verification |
-    sort)
+  actual=$(flatpak remote-ls --user --arch="$arch" --columns=ref astrovm-verification | sort)
 
   if [ "$actual" != "$expected" ]; then
     error "Flatpak client received unexpected refs for $arch"
