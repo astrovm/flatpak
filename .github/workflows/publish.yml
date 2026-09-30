@@ -31,8 +31,8 @@ jobs:
 
       - name: Install publishing tools
         run: |
-          sudo apt update
-          sudo apt install -y flatpak gnupg jq ostree
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y flatpak gnupg jq ostree
 
       - name: Resolve publication request
         id: request
