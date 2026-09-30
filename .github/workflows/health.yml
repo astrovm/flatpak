@@ -17,8 +17,8 @@ jobs:
 
       - name: Install validation tools
         run: |
-          sudo apt update
-          sudo apt install -y curl flatpak jq
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl flatpak jq
 
       - name: Check live repository
         run: scripts/check-live.sh

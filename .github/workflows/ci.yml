@@ -20,8 +20,8 @@ jobs:
 
       - name: Install validation tools
         run: |
-          sudo apt update
-          sudo apt install -y jq kcov shellcheck tidy
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y jq kcov shellcheck tidy
 
       - name: Validate shell scripts
         run: |
