@@ -1,26 +1,26 @@
 # astrovm Flatpak repository
 
-Official Flatpak repository for applications published by [astrovm](https://github.com/astrovm).
+**Install and update astrovm's apps with Flatpak.**
 
-The repository is served from `https://flatpak.4st.li/`. Applications are
-configured in [`apps.json`](apps.json), which is the source of truth for
-publishing, verification, health checks, and the generated website.
+The official repository for apps by [astrovm](https://github.com/astrovm), served from `https://flatpak.4st.li/`.
 
-## Applications
+## Apps
 
 - [Adventure Mods](https://flatpak.4st.li/apps/io.github.astrovm.AdventureMods/install/)
 - [PkgDeck](https://flatpak.4st.li/apps/io.github.astrovm.PkgDeck/install/)
 
-Each application has a generated install page and `.flatpakref` file.
+## ⬇️ Install
 
-Updates are installed through the normal Flatpak update flow:
+Open an app's install page above. Each one also has a `.flatpakref` file.
+
+Updates come through Flatpak as usual:
 
 ```sh
 flatpak update
 ```
 
 <details>
-<summary>Manual repository setup</summary>
+<summary><b>Add the repository by hand</b></summary>
 
 ```sh
 flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo
@@ -28,7 +28,12 @@ flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpa
 
 </details>
 
-## Publishing
+<details>
+<summary><b>Publishing</b></summary>
+
+[`apps.json`](apps.json) lists the apps. It drives publishing, verification, health checks and the website.
+
+### How it works
 
 Each registered application repository publishes one `.flatpak` bundle per
 configured architecture in an immutable GitHub release, then sends a
@@ -58,7 +63,7 @@ Repeated dispatches for the same release are safe. If nothing changes, the
 workflow exits without creating another commit. A daily health workflow checks
 every registered app and architecture.
 
-## Add an application
+### Add an app
 
 Add one object to `apps.json`:
 
@@ -85,7 +90,7 @@ and `.flatpakref` file.
 Removing an application from `apps.json` requires a separate repository
 migration because unregistered refs are intentionally rejected.
 
-## Required secrets
+### Secrets
 
 Configure these secrets in the `flatpak-signing` GitHub environment:
 
@@ -102,7 +107,7 @@ publication should have a human approval.
 Each application repository needs `FLATPAK_REPO_TOKEN`, a fine-grained token
 scoped only to `astrovm/flatpak` with **Contents: Read and write**.
 
-## GitHub Pages setup
+### GitHub Pages
 
 After the first successful publication creates `gh-pages`:
 
@@ -114,7 +119,7 @@ After the first successful publication creates `gh-pages`:
 
 The workflow also writes `.nojekyll` and `CNAME` to the publishing branch.
 
-## Manual publication
+### Publish by hand
 
 Run the workflow with any repository registered in `apps.json`:
 
@@ -127,7 +132,7 @@ gh workflow run publish.yml \
 
 Omit `tag` to publish the latest release.
 
-## Recovery
+### Recovery
 
 If publication fails, fix the release or this repository and rerun the
 workflow. Immutable releases cannot be edited, so incorrect assets require a
@@ -136,7 +141,7 @@ new release tag. Do not bypass digest, ref, OSTree, or Flatpak verification.
 To roll back an application, run the workflow for that repository with its last
 known-good immutable release tag.
 
-## Signing-key recovery
+### Signing-key recovery
 
 Flatpak clients trust the configured repository key. Replacing it without
 updating clients prevents future updates.
@@ -156,3 +161,5 @@ If the signing key is lost or compromised:
 
 Keep an encrypted offline backup of the signing key. Never store a private key
 in this repository, workflow logs, release assets, or artifacts.
+
+</details>
