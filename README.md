@@ -62,6 +62,10 @@ The publishing workflow:
 6. verifies the finished repository with a fresh Flatpak client;
 7. replaces `gh-pages` with the generated snapshot.
 
+Website changes don't wait for a release. When `templates/`, `static/`,
+`assets/` or the site scripts change on `main`, the **Refresh website**
+workflow rebuilds the pages on `gh-pages` and keeps the repository as it is.
+
 Repeated dispatches for the same release are safe. If nothing changes, the
 workflow exits without creating another commit. A daily health workflow checks
 every registered app and architecture.
