@@ -307,8 +307,8 @@ if ! grep -Fq "Adventure Mods" "$site_directory/index.html" ||
   ! grep -Fq "Test App" "$site_directory/index.html" ||
   ! grep -Fq "/apps/io.github.astrovm.AdventureMods/install/" \
     "$site_directory/index.html" ||
-  ! grep -Fq "Why this repository" "$site_directory/index.html" ||
-  ! grep -Fq 'class="benefit-list"' "$site_directory/index.html" ||
+  ! grep -Fq "flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo" \
+    "$site_directory/index.html" ||
   grep -Fq 'class="grid"' "$site_directory/index.html" ||
   grep -Fq "https://github.com/" "$site_directory/index.html" ||
   grep -Fq "Download installer" "$site_directory/index.html" ||
@@ -353,6 +353,14 @@ if ! cmp -s "$repository_root/assets/apps/io.github.astrovm.AdventureMods/icon.s
   exit 1
 fi
 pass "generated site shows app artwork and falls back when an app has none"
+
+for static_file in oneko.js oneko.gif favicon.png apple-touch-icon.png fonts/FiraCode-Latin.woff2; do
+  if ! cmp -s "$repository_root/static/$static_file" "$site_directory/$static_file"; then
+    echo "not ok - generated site is missing static/$static_file" >&2
+    exit 1
+  fi
+done
+pass "generated site includes the static files"
 
 mock_bin=$temporary_directory/mock-bin
 mkdir "$mock_bin"
