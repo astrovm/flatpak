@@ -713,12 +713,10 @@ pass "application descriptors contain registry values verbatim"
 if ! grep -Fq '<h1>Mods &amp; &lt;Tools&gt; | \ &quot;Q&quot;</h1>' "$special_page" ||
   ! grep -Fq '<h2>Mods &amp; &lt;Tools&gt; | \ &quot;Q&quot;</h2>' "$special_site/index.html" ||
   ! grep -Fq '<p>Fast &amp; safe | 100% \ tested</p>' "$special_site/index.html" ||
-  grep -Fq '<Tools>' "$special_page" "$special_site/index.html" ||
-  ! grep -Fxq '          <span class="arch-badge">aarch64</span> <span class="arch-badge">x86_64</span>' \
-    "$special_page"; then
-  fail "the generated pages do not escape registry values or list architectures in order"
+  grep -Fq '<Tools>' "$special_page" "$special_site/index.html"; then
+  fail "the generated pages do not escape registry values"
 fi
-pass "generated pages escape registry values and list architectures in registry order"
+pass "generated pages escape registry values"
 
 cmp -s "$temporary_directory/special-key.gpg" "$special_site/astrovm.gpg" ||
   fail "the published key differs from the input key"

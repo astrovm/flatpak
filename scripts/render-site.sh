@@ -120,18 +120,13 @@ render_app_files()
 {
   local repository=$1
   local app_id app_branch app_name app_summary runtime_repository
-  local app_arch_badges app_icon app_screenshot install_directory
-  local -a architectures
+  local app_icon app_screenshot install_directory
 
   app_id=$(app_value "$repository" id)
   app_branch=$(app_value "$repository" branch)
   app_name=$(app_value "$repository" name)
   app_summary=$(app_value "$repository" summary)
   runtime_repository=$(app_value "$repository" runtime_repository)
-
-  mapfile -t architectures < <(app_architectures "$repository")
-  app_arch_badges=$(printf '<span class="arch-badge">%s</span> ' "${architectures[@]}")
-  app_arch_badges=${app_arch_badges% }
 
   copy_app_assets "$app_id"
   app_icon=$(render_app_icon "$app_id" "app-icon app-icon-large")
@@ -153,7 +148,6 @@ render_app_files()
     -e "s|@APP_ID@|$(escape_sed_replacement "$app_id")|g" \
     -e "s|@APP_NAME@|$(escape_sed_replacement "$(app_html_value "$repository" name)")|g" \
     -e "s|@APP_SUMMARY@|$(escape_sed_replacement "$(app_html_value "$repository" summary)")|g" \
-    -e "s|@APP_ARCH_BADGES@|$(escape_sed_replacement "$app_arch_badges")|g" \
     -e "s|@APP_ICON@|$(escape_sed_replacement "$app_icon")|g" \
     -e "s|@APP_SCREENSHOT@|$(escape_sed_replacement "$app_screenshot")|g" \
     -e "s|@REPOSITORY_URL@|$(escape_sed_replacement "https://github.com/$repository")|g" \

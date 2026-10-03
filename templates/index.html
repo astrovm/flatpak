@@ -6,15 +6,15 @@
     <title>astrovm Flatpak Repository</title>
     <meta
       name="description"
-      content="Install and update applications from the official astrovm Flatpak repository."
+      content="Linux apps by astrovm. Install them with Flatpak and they stay up to date."
     >
     <meta name="theme-color" content="#0b0d12">
     <meta property="og:type" content="website">
     <meta property="og:title" content="astrovm Flatpak Repository">
-    <meta property="og:description" content="Install and update applications from the official astrovm Flatpak repository.">
+    <meta property="og:description" content="Linux apps by astrovm. Install them with Flatpak and they stay up to date.">
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%233b82f6'/%3E%3Cpath d='M32 14 48 23v18L32 50 16 41V23z' fill='none' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3Cpath d='M16 23l16 9 16-9M32 32v18' fill='none' stroke='%23fff' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2312151c'/%3E%3Ctext x='32' y='44' font-family='system-ui,sans-serif' font-size='36' font-weight='800' fill='%235b9cff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
     >
     <link rel="stylesheet" href="/styles.css?v=@STYLES_VERSION@">
   </head>
@@ -22,19 +22,14 @@
     <main class="page">
       <header class="site-header">
         <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7z M3.5 7 12 11.5 20.5 7 M12 11.5v10"/></svg>
-          </span>
-          <span>astrovm</span>
+          astrovm
         </a>
-        <a class="nav-link" href="#setup">Add repository</a>
       </header>
 
       <section class="hero">
-        <p class="eyebrow">Flatpak repository</p>
         <h1>Linux apps by astrovm</h1>
         <p class="lede">
-          Signed builds that update with the rest of your system.
+          Install one and it updates with the rest of your system.
         </p>
       </section>
 
@@ -44,30 +39,8 @@
         </div>
       </section>
 
-      <section class="benefits" aria-label="Why this repository">
-        <h2 class="section-title">Why this repository</h2>
-        <div class="benefit-list">
-          <article class="benefit">
-            <svg class="benefit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z M8.5 12l2.5 2.5 4.5-5"/></svg>
-            <h3>Signed releases</h3>
-            <p>Every app and repository update is signed.</p>
-          </article>
-          <article class="benefit">
-            <svg class="benefit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7 M20 4v4.5h-4.5"/></svg>
-            <h3>Automatic updates</h3>
-            <p>New versions arrive with your normal Flatpak updates.</p>
-          </article>
-          <article class="benefit">
-            <svg class="benefit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M9 8h6 M9 12h6 M9 16h3"/></svg>
-            <h3>x86_64 and ARM</h3>
-            <p>Each app ships for the architectures it supports.</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="setup" class="setup" aria-label="Add the repository">
-        <h2 class="section-title">Add the repository</h2>
-        <p class="setup-text">Run this once. Then install apps from your software manager.</p>
+      <details class="terminal">
+        <summary>Using the terminal?</summary>
         <div class="command-row">
           <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo</code></pre>
           <button
@@ -78,7 +51,7 @@
             Copy
           </button>
         </div>
-      </section>
+      </details>
     </main>
     <script>
       document.querySelectorAll("[data-copy]").forEach((button) => {
