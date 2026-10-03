@@ -135,7 +135,7 @@ p {
   border-radius: 999px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  color: var(--muted);
+  color: var(--text);
   font-size: 0.9rem;
   font-weight: 700;
   text-decoration: none;
@@ -240,6 +240,7 @@ h1 {
 
 .app-card p {
   margin-top: 0.15rem;
+  text-wrap: pretty;
   color: var(--muted);
   font-size: 0.95rem;
 }
@@ -249,8 +250,8 @@ h1 {
   flex: none;
   padding: 0.45rem 1rem;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.9rem;
   font-weight: 800;
   transition:
@@ -259,8 +260,7 @@ h1 {
 }
 
 .app-card:hover .app-card-cta {
-  background: var(--accent);
-  color: var(--accent-ink);
+  box-shadow: 0 0.4rem 1.2rem rgb(244 98 198 / 40%);
 }
 
 /* App icons */
