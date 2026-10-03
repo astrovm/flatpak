@@ -1,31 +1,57 @@
 @font-face {
-  font-family: "Fira Code";
+  font-family: "Nunito";
   font-style: normal;
-  font-weight: 300 700;
+  font-weight: 400 800;
   font-display: swap;
-  src: url("/fonts/FiraCode-Latin.woff2") format("woff2");
+  src: url("/fonts/Nunito-Latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 
-:root {
-  color-scheme: dark;
-  font-family: "Fira Code", Monaco, Consolas, "Ubuntu Mono", monospace;
-  font-feature-settings: "liga", "ss01";
+/* Soft and bubbly: pastel candy colors, round corners, a rounded font. */
 
-  --bg: #211f2b;
-  --surface: #2a2836;
-  --surface-raised: #33303f;
-  --text: #eceae5;
-  --muted: #b3afbd;
-  --dim: #8c8798;
-  --accent: #f462c6;
-  --border: rgb(236 234 229 / 10%);
-  --border-accent: rgb(244 98 198 / 35%);
+:root {
+  color-scheme: light dark;
+  font-family: Nunito, ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --bg: #fff6fb;
+  --bg-blob-1: #ffd9ec;
+  --bg-blob-2: #dcd6ff;
+  --surface: #ffffff;
+  --surface-soft: #fbefff;
+  --text: #2d2442;
+  --muted: #6e6485;
+  --accent: #ff5fa8;
+  --accent-ink: #ffffff;
+  --accent-soft: #ffe1ef;
+  --lilac: #8b7cf6;
+  --border: #f1dcef;
+  --shadow: 0 0.6rem 1.8rem rgb(140 80 140 / 14%);
+  --code-bg: #2d2442;
+  --code: #ffe1ef;
 
   color: var(--text);
   background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1d1a2e;
+    --bg-blob-1: #3a2144;
+    --bg-blob-2: #262350;
+    --surface: #2a2540;
+    --surface-soft: #322b4c;
+    --text: #f6eefc;
+    --muted: #b9add0;
+    --accent: #ff7ab8;
+    --accent-ink: #1d1a2e;
+    --accent-soft: #4a2747;
+    --lilac: #a99bff;
+    --border: #3d3558;
+    --shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 35%);
+    --code-bg: #15121f;
+  }
 }
 
 * {
@@ -36,9 +62,12 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.6;
-  letter-spacing: -0.01em;
+  background:
+    radial-gradient(40rem 26rem at 8% -6rem, var(--bg-blob-1), transparent 70%),
+    radial-gradient(36rem 24rem at 100% 4rem, var(--bg-blob-2), transparent 70%),
+    var(--bg);
+  font-size: 1.0625rem;
+  line-height: 1.55;
 }
 
 a {
@@ -52,7 +81,7 @@ svg {
 
 ::selection {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--accent-ink);
 }
 
 h1,
@@ -64,90 +93,89 @@ p {
 .page {
   width: min(100% - 2.5rem, 64rem);
   margin-inline: auto;
-  padding-block: 2rem 4rem;
+  padding-block: 1.5rem 4rem;
 }
 
-/* Header, like 4st.li: a pink logo block followed by a row of bars */
+/* Header */
 
 .site-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: clamp(3rem, 8vw, 4.5rem);
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(2.5rem, 7vw, 4rem);
 }
 
-.header-logo {
-  display: flex;
-  flex: 1;
+.brand {
+  display: inline-flex;
   align-items: center;
-  min-width: 0;
-}
-
-.header-logo::after {
-  content: "";
-  flex: 1;
-  align-self: stretch;
-  margin-left: 0.5rem;
-  background: repeating-linear-gradient(90deg, var(--accent) 0 2px, transparent 2px 10px);
-}
-
-.logo {
-  flex: none;
-  padding: 0.3rem 0.65rem;
-  background: var(--accent);
-  color: var(--bg);
-  font-weight: 700;
+  gap: 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 800;
   text-decoration: none;
+}
+
+.brand-cat {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  image-rendering: pixelated;
 }
 
 .header-link {
-  flex: none;
-  padding: 0.25rem 0.6rem;
-  border: 2px solid var(--accent);
-  color: var(--accent);
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--muted);
   font-size: 0.9rem;
+  font-weight: 700;
   text-decoration: none;
   transition:
-    background 160ms ease,
-    color 160ms ease;
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .header-link:hover {
-  background: var(--accent);
-  color: var(--bg);
+  color: var(--accent);
+  transform: translateY(-1px);
 }
 
 /* Home */
 
 .hero {
-  max-width: 40rem;
+  max-width: 38rem;
 }
 
 h1 {
-  display: inline-block;
-  padding-bottom: 0.35rem;
-  border-bottom: 4px dotted var(--accent);
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+h1::after {
+  content: "\00a0♡";
   color: var(--accent);
-  font-size: clamp(2rem, 6vw, 3.25rem);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
 }
 
 .lede {
-  margin-top: 1.25rem;
+  margin-top: 0.9rem;
   color: var(--muted);
-  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
   text-wrap: pretty;
 }
 
 .catalog {
-  margin-top: clamp(2.5rem, 6vw, 3.5rem);
+  margin-top: clamp(2.5rem, 6vw, 3.25rem);
 }
 
 .catalog-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
   gap: 1.5rem;
 }
 
@@ -155,44 +183,46 @@ h1 {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 2px solid var(--border);
+  border-radius: 1.5rem;
   background: var(--surface);
+  box-shadow: var(--shadow);
   text-decoration: none;
   transition:
-    border-color 160ms ease,
-    transform 160ms ease,
-    box-shadow 160ms ease;
+    transform 200ms cubic-bezier(0.3, 1.4, 0.6, 1),
+    box-shadow 200ms ease;
 }
 
 .app-card:hover {
-  border-color: var(--accent);
-  box-shadow: 6px 6px 0 var(--accent);
-  transform: translate(-3px, -3px);
+  box-shadow: 0 1rem 2.5rem rgb(255 95 168 / 22%);
+  transform: translateY(-4px) rotate(-0.4deg);
 }
 
 .app-shot {
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  padding: 1.5rem 1.5rem 0;
-  border-bottom: 2px solid var(--border);
-  background:
-    radial-gradient(circle, rgb(244 98 198 / 22%) 1px, transparent 1.5px) 0 0 / 14px 14px,
-    var(--surface-raised);
+  margin: 0.6rem 0.6rem 0;
+  padding: 1.4rem 1.4rem 0;
+  border-radius: 1.1rem;
+  background: linear-gradient(140deg, var(--accent-soft), var(--surface-soft) 55%, var(--bg-blob-2));
 }
 
 .app-shot img {
   width: 100%;
   height: auto;
-  border: 2px solid var(--bg);
-  border-bottom: 0;
-  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 40%);
+  border-radius: 0.7rem 0.7rem 0 0;
+  box-shadow: 0 0.6rem 1.6rem rgb(45 36 66 / 25%);
+  transition: transform 300ms ease;
+}
+
+.app-card:hover .app-shot img {
+  transform: translateY(-5px);
 }
 
 .app-card-body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.1rem 1.25rem;
+  padding: 1rem 1.25rem 1.2rem;
 }
 
 .app-card-text {
@@ -201,33 +231,32 @@ h1 {
 }
 
 .app-card h2 {
-  color: var(--accent);
-  font-size: 1.15rem;
+  font-size: 1.2rem;
+  font-weight: 800;
 }
 
 .app-card p {
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.95rem;
 }
 
 .app-card-cta {
   flex: none;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
   color: var(--accent);
   font-size: 0.9rem;
-}
-
-.app-card-cta::before {
-  content: "[";
-}
-
-.app-card-cta::after {
-  content: "]";
+  font-weight: 800;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .app-card:hover .app-card-cta {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--accent-ink);
 }
 
 /* App icons */
@@ -239,13 +268,14 @@ h1 {
 }
 
 .app-icon-large {
-  width: clamp(4.5rem, 13vw, 7rem);
-  height: clamp(4.5rem, 13vw, 7rem);
+  width: clamp(4.5rem, 13vw, 6.5rem);
+  height: clamp(4.5rem, 13vw, 6.5rem);
+  filter: drop-shadow(0 0.5rem 1rem rgb(45 36 66 / 25%));
 }
 
 .app-icon-fallback {
-  border: 2px solid var(--border-accent);
-  background: var(--surface-raised);
+  border-radius: 1rem;
+  background: var(--surface-soft);
 }
 
 /* Install page */
@@ -260,12 +290,12 @@ h1 {
   min-width: 0;
 }
 
-.app-hero h1 {
-  font-size: clamp(1.9rem, 5vw, 3rem);
+.app-hero h1::after {
+  content: none;
 }
 
 .app-hero .lede {
-  margin-top: 0.85rem;
+  margin-top: 0.5rem;
 }
 
 .actions {
@@ -280,35 +310,29 @@ h1 {
   min-height: 3rem;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
-  padding: 0.65rem 1.25rem;
-  border: 2px solid var(--accent);
-  color: var(--accent);
-  font-weight: 700;
+  gap: 0.5rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-weight: 800;
   text-decoration: none;
-  transition:
-    box-shadow 160ms ease,
-    transform 160ms ease;
+  transition: transform 180ms cubic-bezier(0.3, 1.5, 0.6, 1);
 }
 
 .button:hover {
-  box-shadow: 4px 4px 0 var(--accent);
-  transform: translate(-2px, -2px);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .button:active {
-  box-shadow: none;
-  transform: none;
+  transform: scale(0.98);
 }
 
 .button-primary {
-  padding-inline: 1.75rem;
+  padding-inline: 1.8rem;
   background: var(--accent);
-  color: var(--bg);
-}
-
-.button-primary:hover {
-  box-shadow: 4px 4px 0 var(--text);
+  box-shadow: 0 0.6rem 1.6rem rgb(255 95 168 / 35%);
+  color: var(--accent-ink);
 }
 
 .button-icon {
@@ -317,7 +341,8 @@ h1 {
   fill: none;
   stroke: currentColor;
   stroke-width: 2.5;
-  stroke-linecap: square;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .github-icon {
@@ -329,48 +354,48 @@ h1 {
 
 .fallback {
   margin-top: 1rem;
-  color: var(--dim);
-  font-size: 0.875rem;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .fallback a {
   color: var(--accent);
+  font-weight: 700;
 }
 
 .app-screenshot {
-  margin-top: clamp(2.5rem, 6vw, 3.5rem);
+  margin-top: clamp(2.5rem, 6vw, 3.25rem);
   padding: clamp(1rem, 4vw, 2.25rem);
-  border: 2px solid var(--border);
-  background:
-    radial-gradient(circle, rgb(244 98 198 / 22%) 1px, transparent 1.5px) 0 0 / 14px 14px,
-    var(--surface);
+  border-radius: 1.75rem;
+  background: linear-gradient(140deg, var(--accent-soft), var(--surface-soft) 55%, var(--bg-blob-2));
 }
 
 .app-screenshot img {
   width: 100%;
   height: auto;
-  border: 2px solid var(--bg);
-  box-shadow: 0 1rem 3rem rgb(0 0 0 / 45%);
+  border-radius: 0.9rem;
+  box-shadow: 0 1rem 2.5rem rgb(45 36 66 / 25%);
 }
 
 /* Terminal */
 
 .terminal {
   margin-top: 1.5rem;
-  border: 2px solid var(--border);
+  border-radius: 1.25rem;
   background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .catalog + .terminal {
-  margin-top: clamp(3rem, 7vw, 4rem);
+  margin-top: clamp(2.5rem, 6vw, 3.5rem);
 }
 
 .terminal summary {
-  padding: 0.9rem 1.1rem;
+  padding: 0.95rem 1.2rem;
 }
 
 .terminal .command-row {
-  margin: 0 1.1rem 1.1rem;
+  margin: 0 1rem 1rem;
 }
 
 summary {
@@ -379,6 +404,7 @@ summary {
   gap: 0.6rem;
   cursor: pointer;
   color: var(--muted);
+  font-weight: 700;
   list-style: none;
 }
 
@@ -391,17 +417,21 @@ summary::-webkit-details-marker {
 }
 
 summary::before {
-  content: "$";
+  content: ">_";
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.4rem;
+  background: var(--accent-soft);
   color: var(--accent);
-  font-weight: 700;
+  font: 700 0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .command-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 0.75rem 0.75rem 1rem;
-  background: var(--bg);
+  padding: 0.7rem 0.7rem 0.7rem 1rem;
+  border-radius: 0.9rem;
+  background: var(--code-bg);
 }
 
 pre {
@@ -409,38 +439,35 @@ pre {
   min-width: 0;
   margin: 0;
   overflow-x: auto;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.85rem;
+  color: var(--code);
+  font: 0.85rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   white-space: pre-wrap;
   word-break: break-all;
 }
 
 .copy-button {
   flex: none;
-  padding: 0.3rem 0.7rem;
-  border: 2px solid var(--accent);
-  background: transparent;
-  color: var(--accent);
+  padding: 0.35rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
   cursor: pointer;
   font: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  transition:
-    background 160ms ease,
-    color 160ms ease;
+  font-size: 0.85rem;
+  font-weight: 800;
+  transition: transform 160ms ease;
 }
 
 .copy-button:hover {
-  background: var(--accent);
-  color: var(--bg);
+  transform: scale(1.05);
 }
 
 .button:focus-visible,
 .copy-button:focus-visible,
 summary:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--text);
+  outline: 3px solid var(--lilac);
   outline-offset: 3px;
 }
 
@@ -451,7 +478,7 @@ a:focus-visible {
   }
 
   .app-card-body {
-    padding: 1rem;
+    padding: 0.9rem 1rem 1rem;
   }
 
   .app-shot {

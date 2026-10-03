@@ -91,7 +91,7 @@ render_app_card()
                 <h2>$app_name</h2>
                 <p>$app_summary</p>
               </div>
-              <span class="app-card-cta">install</span>
+              <span class="app-card-cta">Install</span>
             </div>
           </a>
 EOF
