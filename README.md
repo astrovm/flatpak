@@ -33,6 +33,8 @@ flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpa
 
 [`apps.json`](apps.json) lists the apps. It drives publishing, verification, health checks and the website.
 
+The website shows `assets/apps/<app-id>/icon.svg` and `screenshot.webp` when an app has them.
+
 ### How it works
 
 Each registered application repository publishes one `.flatpak` bundle per

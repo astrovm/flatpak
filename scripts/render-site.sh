@@ -35,25 +35,64 @@ escape_sed_replacement()
   sed 's/[&|\\]/\\&/g' <<< "$1"
 }
 
+# Optional artwork lives in assets/apps/<app-id>/: icon.svg and screenshot.webp.
+copy_app_assets()
+{
+  local app_id=$1
+  local asset_directory=$repository_root/assets/apps/$app_id
+
+  mkdir -p "$output_directory/apps/$app_id"
+  if [ -d "$asset_directory" ]; then
+    cp -R "$asset_directory/." "$output_directory/apps/$app_id/"
+  fi
+}
+
+render_app_icon()
+{
+  local app_id=$1
+  local class_name=$2
+
+  if [ -f "$output_directory/apps/$app_id/icon.svg" ]; then
+    printf '<img class="%s" src="/apps/%s/icon.svg" alt="">' "$class_name" "$app_id"
+  else
+    printf '<span class="%s app-icon-fallback" aria-hidden="true"></span>' "$class_name"
+  fi
+}
+
+render_app_screenshot()
+{
+  local app_id=$1
+  local app_name=$2
+  local class_name=$3
+
+  if [ -f "$output_directory/apps/$app_id/screenshot.webp" ]; then
+    printf '<div class="%s"><img src="/apps/%s/screenshot.webp" alt="%s screenshot"></div>' \
+      "$class_name" "$app_id" "$app_name"
+  fi
+}
+
 render_app_card()
 {
   local repository=$1
-  local app_id app_name app_summary
+  local app_id app_name app_summary app_icon app_screenshot
 
   app_id=$(app_value "$repository" id)
   app_name=$(app_html_value "$repository" name)
   app_summary=$(app_html_value "$repository" summary)
+  app_icon=$(render_app_icon "$app_id" "app-icon")
+  app_screenshot=$(render_app_screenshot "$app_id" "$app_name" "app-shot")
 
   cat <<EOF
-          <a
-            class="card app-card"
-            href="/apps/$app_id/install/"
-          >
-            <div>
-              <h2>$app_name</h2>
-              <p>$app_summary</p>
+          <a class="app-card" href="/apps/$app_id/install/">
+            $app_screenshot
+            <div class="app-card-body">
+              $app_icon
+              <div class="app-card-text">
+                <h2>$app_name</h2>
+                <p>$app_summary</p>
+              </div>
+              <span class="app-card-cta">Install</span>
             </div>
-            <span class="app-card-arrow" aria-hidden="true">→</span>
           </a>
 EOF
 }
@@ -81,7 +120,7 @@ render_app_files()
 {
   local repository=$1
   local app_id app_branch app_name app_summary runtime_repository
-  local app_arch_badges install_directory
+  local app_arch_badges app_icon app_screenshot install_directory
   local -a architectures
 
   app_id=$(app_value "$repository" id)
@@ -93,6 +132,10 @@ render_app_files()
   mapfile -t architectures < <(app_architectures "$repository")
   app_arch_badges=$(printf '<span class="arch-badge">%s</span> ' "${architectures[@]}")
   app_arch_badges=${app_arch_badges% }
+
+  copy_app_assets "$app_id"
+  app_icon=$(render_app_icon "$app_id" "app-icon app-icon-large")
+  app_screenshot=$(render_app_screenshot "$app_id" "$(app_html_value "$repository" name)" "app-screenshot")
 
   sed \
     -e "s|@APP_ID@|$(escape_sed_replacement "$app_id")|g" \
@@ -111,6 +154,8 @@ render_app_files()
     -e "s|@APP_NAME@|$(escape_sed_replacement "$(app_html_value "$repository" name)")|g" \
     -e "s|@APP_SUMMARY@|$(escape_sed_replacement "$(app_html_value "$repository" summary)")|g" \
     -e "s|@APP_ARCH_BADGES@|$(escape_sed_replacement "$app_arch_badges")|g" \
+    -e "s|@APP_ICON@|$(escape_sed_replacement "$app_icon")|g" \
+    -e "s|@APP_SCREENSHOT@|$(escape_sed_replacement "$app_screenshot")|g" \
     -e "s|@REPOSITORY_URL@|$(escape_sed_replacement "https://github.com/$repository")|g" \
     -e "s|@STYLES_VERSION@|$stylesheet_version|g" \
     "$repository_root/templates/app-install.html" \
@@ -121,12 +166,12 @@ sed "s|@GPG_KEY@|$(escape_sed_replacement "$public_key")|" \
   "$repository_root/templates/astrovm.flatpakrepo.in" \
   > "$output_directory/astrovm.flatpakrepo"
 cp "$public_key_file" "$output_directory/astrovm.gpg"
-render_index > "$output_directory/index.html"
 cp "$stylesheet_file" "$output_directory/styles.css"
 
 while IFS= read -r repository; do
   render_app_files "$repository"
 done < <(app_repositories)
+render_index > "$output_directory/index.html"
 
 printf '%s\n' 'flatpak.4st.li' > "$output_directory/CNAME"
 touch "$output_directory/.nojekyll"

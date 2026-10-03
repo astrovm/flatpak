@@ -331,6 +331,29 @@ if ! grep -Fq "Adventure Mods" "$site_directory/index.html" ||
 fi
 pass "generated site contains all application metadata"
 
+adventure_page=$site_directory/apps/io.github.astrovm.AdventureMods/install/index.html
+test_app_page=$site_directory/apps/io.github.astrovm.TestApp/install/index.html
+if ! cmp -s "$repository_root/assets/apps/io.github.astrovm.AdventureMods/icon.svg" \
+    "$site_directory/apps/io.github.astrovm.AdventureMods/icon.svg" ||
+  ! cmp -s "$repository_root/assets/apps/io.github.astrovm.PkgDeck/screenshot.webp" \
+    "$site_directory/apps/io.github.astrovm.PkgDeck/screenshot.webp" ||
+  ! grep -Fq '<img class="app-icon" src="/apps/io.github.astrovm.PkgDeck/icon.svg" alt="">' \
+    "$site_directory/index.html" ||
+  ! grep -Fq '<img src="/apps/io.github.astrovm.PkgDeck/screenshot.webp" alt="PkgDeck screenshot">' \
+    "$site_directory/index.html" ||
+  ! grep -Fq '<img class="app-icon app-icon-large" src="/apps/io.github.astrovm.AdventureMods/icon.svg" alt="">' \
+    "$adventure_page" ||
+  ! grep -Fq '<div class="app-screenshot"><img src="/apps/io.github.astrovm.AdventureMods/screenshot.webp"' \
+    "$adventure_page" ||
+  ! grep -Fq '<span class="app-icon app-icon-large app-icon-fallback" aria-hidden="true"></span>' \
+    "$test_app_page" ||
+  grep -Fq 'screenshot' "$test_app_page" ||
+  [ -e "$site_directory/apps/io.github.astrovm.TestApp/icon.svg" ]; then
+  echo "not ok - generated site does not show the right application artwork" >&2
+  exit 1
+fi
+pass "generated site shows app artwork and falls back when an app has none"
+
 mock_bin=$temporary_directory/mock-bin
 mkdir "$mock_bin"
 # The single quotes write a mock script that expands its own arguments.
