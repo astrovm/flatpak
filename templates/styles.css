@@ -444,18 +444,6 @@ a:focus-visible {
   outline-offset: 3px;
 }
 
-/* The cat from oneko.js */
-
-.oneko {
-  position: fixed;
-  z-index: 10;
-  width: 32px;
-  height: 32px;
-  background-image: url("/oneko.gif");
-  image-rendering: pixelated;
-  pointer-events: none;
-}
-
 @media (max-width: 48rem) {
   .page {
     width: min(100% - 1.5rem, 64rem);
