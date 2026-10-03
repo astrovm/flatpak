@@ -329,3 +329,21 @@ validate_repository_refs()
     fi
   done
 }
+
+# Git does not track empty directories. A previously published OSTree repo on
+# gh-pages therefore often lacks empty refs/{remotes,mirrors} (and similar)
+# paths after checkout, and OSTree fails with:
+# Listing refs: opendir(refs/remotes): No such file or directory
+restore_repository_directories()
+{
+  local repository_directory=$1
+
+  mkdir -p \
+    "$repository_directory/extensions" \
+    "$repository_directory/objects" \
+    "$repository_directory/refs/heads" \
+    "$repository_directory/refs/mirrors" \
+    "$repository_directory/refs/remotes" \
+    "$repository_directory/state" \
+    "$repository_directory/tmp"
+}

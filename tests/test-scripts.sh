@@ -307,6 +307,8 @@ printf 'stale\n' > "$refreshed_site/stale.html"
 rm "$refreshed_site/index.html"
 cp "$refreshed_site/repo/refs-list" "$temporary_directory/refs-before"
 cp "$refreshed_site/astrovm.gpg" "$temporary_directory/key-before"
+# A fresh gh-pages checkout has no empty directories, which OSTree needs.
+rm -rf "$refreshed_site/repo/refs/remotes" "$refreshed_site/repo/refs/mirrors"
 expect_success \
   "the website is refreshed on a published site and verified" \
   env -u GH_TOKEN -u FLATPAK_GPG_PRIVATE_KEY -u FLATPAK_GPG_KEY_ID \
@@ -319,6 +321,9 @@ if [ -e "$refreshed_site/stale.html" ] ||
   ! cmp -s "$temporary_directory/key-before" "$refreshed_site/astrovm.gpg"; then
   fail "refreshing changed the repository or left the old website behind"
 fi
+for directory in extensions objects refs/heads refs/mirrors refs/remotes state tmp; do
+  [ -d "$refreshed_site/repo/$directory" ] || fail "refreshing did not restore repository directory $directory"
+done
 pass "refreshing regenerates the website and keeps the repository and key"
 
 expect_failure \

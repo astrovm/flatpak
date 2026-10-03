@@ -23,6 +23,8 @@ if [ ! -s "$site_directory/repo/config" ] || [ ! -s "$site_directory/astrovm.gpg
   exit 1
 fi
 
+restore_repository_directories "$site_directory/repo"
+
 temporary_root=${RUNNER_TEMP:-${TMPDIR:-/tmp}}
 working_directory=$(mktemp -d "$temporary_root/flatpak-refresh.XXXXXX")
 trap 'rm -rf -- "$working_directory"' EXIT
