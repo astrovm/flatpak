@@ -11,6 +11,7 @@
     <meta property="og:description" content="Linux apps by astro. Install one with Flatpak and it stays up to date.">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" href="/fonts/Nunito-Latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/FiraCode-Latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/styles.css?v=@STYLES_VERSION@">
     <script src="/oneko.js" defer></script>
@@ -18,14 +19,15 @@
   <body>
     <main class="page">
       <header class="site-header">
-        <div class="header-logo">
-          <a class="logo" href="/">astro &lt;(^^,)&gt;</a>
-        </div>
+        <a class="brand" href="/">
+          <span class="brand-bed" data-oneko-home><img class="brand-cat" src="/favicon.png" alt="" width="32" height="32"></span>
+          <span>astro's apps</span>
+        </a>
         <a class="header-link" href="https://4st.li/">4st.li</a>
       </header>
 
       <section class="hero">
-        <h1>apps for linux</h1>
+        <h1>Little apps for Linux</h1>
         <p class="lede">Install one and it updates with the rest of your system.</p>
       </section>
 
@@ -36,7 +38,7 @@
       </section>
 
       <details class="terminal">
-        <summary>using the terminal?</summary>
+        <summary>Using the terminal?</summary>
         <div class="command-row">
           <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo</code></pre>
           <button
@@ -44,7 +46,7 @@
             type="button"
             data-copy="flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo"
           >
-            copy
+            Copy
           </button>
         </div>
       </details>
@@ -62,9 +64,9 @@
             document.execCommand("copy");
             field.remove();
           }
-          button.textContent = "copied ♡";
+          button.textContent = "Copied ♡";
           setTimeout(() => {
-            button.textContent = "copy";
+            button.textContent = "Copy";
           }, 2000);
         });
       });

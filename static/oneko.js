@@ -5,6 +5,7 @@
 // From the console: oneko.bite(), knock(), push(), steal(), perch(), scratch(),
 // peek(), nap(), pspsps(), nyan(), friend(), pet(), play() and hat("pumpkin").
 // Add ?today=2026-10-31T03:00 to the URL to pretend it is another day or time.
+// Put data-oneko-home on an element and the cat naps there until someone clicks it.
 (function oneko() {
   const SIZE = 32;
   const TICK = 100;
@@ -110,6 +111,8 @@
   let nyanUntil = 0;
   let yarn = null;
   let hat = null;
+  const home = document.querySelector("[data-oneko-home]");
+  let parked = Boolean(home);
 
   const random = (list) => list[Math.floor(Math.random() * list.length)];
   const between = (min, max) => min + Math.random() * (max - min);
@@ -339,6 +342,11 @@
 
     petted() {
       puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
+      if (parked) {
+        wake();
+        this.say("!");
+        return;
+      }
       window.dispatchEvent(new CustomEvent("oneko:meow"));
       if (this.loot) {
         this.giveBack();
@@ -805,6 +813,16 @@
     frame() {
       this.frameCount += 1;
 
+      // Napping in the logo until someone wakes it up.
+      if (parked) {
+        const spot = homeSpot();
+        this.x = spot.x;
+        this.y = spot.y;
+        this.place();
+        this.setSprite(this.frameCount % 60 < 50 ? "idle" : "scratchSelf", this.frameCount);
+        return;
+      }
+
       if (this.plan) {
         this.doPlan();
         return;
@@ -1012,11 +1030,30 @@
     cats.push(new Cat(first.x + 40, first.y + 10, first));
   }
 
+  function homeSpot() {
+    const rect = home.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
+
+  function wake() {
+    parked = false;
+    home.classList.add("oneko-away");
+    if (!yarn) {
+      yarn = new Yarn();
+    }
+  }
+
   function main() {
+    // A still logo is enough when motion is turned off.
+    if (home && calm) {
+      return;
+    }
     addStyles();
-    const startX = touch ? window.innerWidth - 40 : 32;
-    const startY = touch ? window.innerHeight - 40 : 32;
-    cats.push(new Cat(startX, startY));
+    const start = home ? homeSpot() : touch ? { x: window.innerWidth - 40, y: window.innerHeight - 40 } : { x: 32, y: 32 };
+    cats.push(new Cat(start.x, start.y));
+    if (home) {
+      home.classList.add("oneko-home");
+    }
 
     if (calm) {
       return;
@@ -1048,7 +1085,9 @@
       cats.forEach((cat) => cat.distract());
     });
 
-    yarn = new Yarn();
+    if (!parked) {
+      yarn = new Yarn();
+    }
     listenForSecrets();
     setInterval(() => cats.forEach((cat) => cat.frame()), TICK);
 
