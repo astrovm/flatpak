@@ -1035,11 +1035,20 @@
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   }
 
+  // On phones the yarn would sit on top of the page, so it only shows while in play.
+  const roomy = () => window.innerWidth >= 700;
+
+  function addYarn() {
+    if (!yarn) {
+      yarn = new Yarn();
+    }
+  }
+
   function wake() {
     parked = false;
     home.classList.add("oneko-away");
-    if (!yarn) {
-      yarn = new Yarn();
+    if (roomy()) {
+      addYarn();
     }
   }
 
@@ -1085,11 +1094,16 @@
       cats.forEach((cat) => cat.distract());
     });
 
-    if (!parked) {
-      yarn = new Yarn();
+    if (!parked && roomy()) {
+      addYarn();
     }
     listenForSecrets();
-    setInterval(() => cats.forEach((cat) => cat.frame()), TICK);
+    setInterval(() => {
+      cats.forEach((cat) => cat.frame());
+      if (yarn) {
+        yarn.el.hidden = !roomy() && !yarn.interesting() && !yarn.rolling;
+      }
+    }, TICK);
 
     if (lateNight) {
       setTimeout(() => cats[0].say("*yawn*"), 3000);
@@ -1108,7 +1122,8 @@
     cats: () => cats.map((cat) => ({ x: cat.x, y: cat.y })),
     chase: (point, duration) => cats.forEach((cat) => cat.chase(point, duration)),
     play: () => {
-      if (yarn && !yarn.interesting()) {
+      addYarn();
+      if (!yarn.interesting()) {
         yarn.throwFrom(first().x, first().y);
       }
     },
