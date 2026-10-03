@@ -109,14 +109,24 @@ p {
   text-decoration: none;
 }
 
-.brand-cat {
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0.2rem;
+/* The cat's bed: oneko.js parks the cat here until someone clicks it. */
+.brand-bed {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
   border-radius: 50%;
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.brand-cat {
   image-rendering: pixelated;
+}
+
+/* The moving cat takes over, so the still one hides. */
+.brand-bed.oneko-home .brand-cat {
+  visibility: hidden;
 }
 
 .header-link {
@@ -151,11 +161,6 @@ h1 {
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.04em;
-}
-
-h1::after {
-  content: "\00a0♡";
-  color: var(--accent);
 }
 
 .lede {
@@ -287,10 +292,6 @@ h1::after {
 
 .app-hero-text {
   min-width: 0;
-}
-
-.app-hero h1::after {
-  content: none;
 }
 
 .app-hero .lede {
