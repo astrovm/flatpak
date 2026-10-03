@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Install PkgDeck</title>
+    <meta name="description" content="Install PkgDeck on Linux with Flatpak. Manage software from one fast GUI and CLI.">
+    <meta name="theme-color" content="#211f2b">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Install PkgDeck">
+    <meta property="og:description" content="Install PkgDeck on Linux with Flatpak. Manage software from one fast GUI and CLI.">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" href="/fonts/Nunito-Latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/FiraCode-Latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/styles.css?v=ca5b2e385a97">
+    <script src="/oneko.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="site-header">
+        <a class="brand" href="/">
+          <span class="brand-bed" data-oneko-home><img class="brand-cat" src="/favicon.png" alt="" width="32" height="32"></span>
+          <span>astro's apps</span>
+        </a>
+        <a class="header-link" href="/">All apps</a>
+      </header>
+
+      <section class="app-hero">
+        <img class="app-icon app-icon-large" src="/apps/io.github.astrovm.PkgDeck/icon.svg" alt="">
+        <div class="app-hero-text">
+          <h1>PkgDeck</h1>
+          <p class="lede">Manage software from one fast GUI and CLI.</p>
+        </div>
+      </section>
+
+      <div class="actions">
+        <a
+          id="install-link"
+          class="button button-primary"
+          href="flatpak+https://flatpak.4st.li/io.github.astrovm.PkgDeck.flatpakref"
+        >
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11 M7 10.5l5 5 5-5 M5 20h14"/></svg>
+          <span>Install</span>
+        </a>
+        <a class="button" href="https://github.com/astrovm/PkgDeck">
+          <svg
+            class="github-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M10.226 17.284c-2.965-.36-5.054-2.493-5.054-5.256 0-1.123.404-2.336 1.078-3.144-.292-.741-.247-2.314.09-2.965.898-.112 2.111.36 2.83 1.01.853-.269 1.752-.404 2.853-.404 1.1 0 1.999.135 2.807.382.696-.629 1.932-1.1 2.83-.988.315.606.36 2.179.067 2.942.72.854 1.101 2 1.101 3.167 0 2.763-2.089 4.852-5.098 5.234.763.494 1.28 1.572 1.28 2.807v2.336c0 .674.561 1.056 1.235.786 4.066-1.55 7.255-5.615 7.255-10.646C23.5 6.188 18.334 1 11.978 1 5.62 1 .5 6.188.5 12.545c0 4.986 3.167 9.12 7.435 10.669.606.225 1.19-.18 1.19-.786V20.63a2.9 2.9 0 0 1-1.078.224c-1.483 0-2.359-.808-2.987-2.313-.247-.607-.517-.966-1.034-1.033-.27-.023-.359-.135-.359-.27 0-.27.45-.471.898-.471.652 0 1.213.404 1.797 1.235.45.651.921.943 1.483.943.561 0 .92-.202 1.437-.719.382-.381.674-.718.944-.943"/>
+          </svg>
+          <span>Source code</span>
+        </a>
+      </div>
+      <p class="fallback">
+        Nothing opened?
+        <a href="/io.github.astrovm.PkgDeck.flatpakref">Download the installer</a>
+        instead.
+      </p>
+
+      <div class="app-screenshot"><img src="/apps/io.github.astrovm.PkgDeck/screenshot.webp" alt="PkgDeck screenshot"></div>
+
+      <details class="terminal">
+        <summary>Using the terminal?</summary>
+        <div class="command-row">
+          <pre><code>flatpak install https://flatpak.4st.li/io.github.astrovm.PkgDeck.flatpakref</code></pre>
+          <button
+            class="copy-button"
+            type="button"
+            data-copy="flatpak install https://flatpak.4st.li/io.github.astrovm.PkgDeck.flatpakref"
+          >
+            Copy
+          </button>
+        </div>
+      </details>
+    </main>
+    <script>
+      try {
+        window.location.replace(document.getElementById("install-link").href);
+      } catch {
+        // This browser cannot open the software manager; the page stays put.
+      }
+
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+          } catch {
+            const field = document.createElement("textarea");
+            field.value = button.dataset.copy;
+            document.body.append(field);
+            field.select();
+            document.execCommand("copy");
+            field.remove();
+          }
+          button.textContent = "Copied ♡";
+          setTimeout(() => {
+            button.textContent = "Copy";
+          }, 2000);
+        });
+      });
+    </script>
+  </body>
+</html>

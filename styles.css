@@ -1,0 +1,512 @@
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/FiraCode-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/Nunito-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+/* 4st.li colors and type for titles, with softer rounded shapes of its own. */
+
+:root {
+  color-scheme: dark;
+  font-family: Nunito, ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --mono: "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+  --bg: #211f2b;
+  --bg-blob-1: rgb(244 98 198 / 16%);
+  --bg-blob-2: rgb(139 124 246 / 12%);
+  --surface: #2a2836;
+  --surface-soft: #33303f;
+  --text: #eceae5;
+  --muted: #b3afbd;
+  --accent: #f462c6;
+  --accent-ink: #211f2b;
+  --accent-soft: rgb(244 98 198 / 16%);
+  --lilac: #a99bff;
+  --border: rgb(236 234 229 / 10%);
+  --shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 35%);
+  --code-bg: #1a1822;
+  --code: #eceae5;
+
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(40rem 26rem at 8% -6rem, var(--bg-blob-1), transparent 70%),
+    radial-gradient(36rem 24rem at 100% 4rem, var(--bg-blob-2), transparent 70%),
+    var(--bg);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.page {
+  width: min(100% - 2.5rem, 64rem);
+  margin-inline: auto;
+  padding-block: 1.5rem 4rem;
+}
+
+/* Header */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(2.5rem, 7vw, 4rem);
+}
+
+.brand {
+  font-family: var(--mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* The cat's bed: oneko.js parks the cat here until someone clicks it. */
+.brand-bed {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.brand-cat {
+  image-rendering: pixelated;
+}
+
+/* The moving cat takes over, so the still one hides. */
+.brand-bed.oneko-home .brand-cat {
+  visibility: hidden;
+}
+
+.header-link {
+  font-family: var(--mono);
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.header-link:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* Home */
+
+.hero {
+  max-width: 38rem;
+}
+
+h1 {
+  font-family: var(--mono);
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.lede {
+  margin-top: 0.9rem;
+  color: var(--muted);
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  text-wrap: pretty;
+}
+
+.catalog {
+  margin-top: clamp(2.5rem, 6vw, 3.25rem);
+}
+
+.catalog-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1.5rem;
+}
+
+.app-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  transition:
+    transform 200ms cubic-bezier(0.3, 1.4, 0.6, 1),
+    box-shadow 200ms ease;
+}
+
+.app-card:hover {
+  box-shadow: 0 1rem 2.5rem rgb(244 98 198 / 25%);
+  transform: translateY(-4px) rotate(-0.4deg);
+}
+
+.app-shot {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  margin: 0.6rem 0.6rem 0;
+  padding: 1.4rem 1.4rem 0;
+  border-radius: 1.1rem;
+  background: linear-gradient(140deg, var(--accent-soft), var(--surface-soft) 55%, var(--bg-blob-2));
+}
+
+.app-shot img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.7rem 0.7rem 0 0;
+  box-shadow: 0 0.6rem 1.6rem rgb(0 0 0 / 40%);
+  transition: transform 300ms ease;
+}
+
+.app-card:hover .app-shot img {
+  transform: translateY(-5px);
+}
+
+.app-card-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.2rem;
+}
+
+.app-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-card h2 {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.app-card p {
+  margin-top: 0.15rem;
+  text-wrap: pretty;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.app-card-cta {
+  font-family: var(--mono);
+  flex: none;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.app-card:hover .app-card-cta {
+  box-shadow: 0 0.4rem 1.2rem rgb(244 98 198 / 40%);
+}
+
+/* App icons */
+
+.app-icon {
+  flex: none;
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+.app-icon-large {
+  width: clamp(4.5rem, 13vw, 6.5rem);
+  height: clamp(4.5rem, 13vw, 6.5rem);
+  filter: drop-shadow(0 0.5rem 1rem rgb(0 0 0 / 40%));
+}
+
+.app-icon-fallback {
+  border-radius: 1rem;
+  background: var(--surface-soft);
+}
+
+/* Install page */
+
+.app-hero {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 4vw, 2rem);
+}
+
+.app-hero-text {
+  min-width: 0;
+}
+
+.app-hero .lede {
+  margin-top: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.button {
+  font-family: var(--mono);
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 180ms cubic-bezier(0.3, 1.5, 0.6, 1);
+}
+
+.button:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button-primary {
+  padding-inline: 1.8rem;
+  background: var(--accent);
+  box-shadow: 0 0.6rem 1.6rem rgb(244 98 198 / 30%);
+  color: var(--accent-ink);
+}
+
+.button-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.github-icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: none;
+  fill: currentColor;
+}
+
+.fallback {
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.fallback a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.app-screenshot {
+  margin-top: clamp(2.5rem, 6vw, 3.25rem);
+  padding: clamp(1rem, 4vw, 2.25rem);
+  border-radius: 1.75rem;
+  background: linear-gradient(140deg, var(--accent-soft), var(--surface-soft) 55%, var(--bg-blob-2));
+}
+
+.app-screenshot img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.9rem;
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 40%);
+}
+
+/* Terminal */
+
+.terminal {
+  margin-top: 1.5rem;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.catalog + .terminal {
+  margin-top: clamp(2.5rem, 6vw, 3.5rem);
+}
+
+.terminal summary {
+  padding: 0.95rem 1.2rem;
+}
+
+.terminal .command-row {
+  margin: 0 1rem 1rem;
+}
+
+summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 700;
+  list-style: none;
+}
+
+summary:hover {
+  color: var(--text);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::before {
+  content: ">_";
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.4rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 700 0.8rem/1.4 var(--mono);
+}
+
+.command-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.7rem 0.7rem 1rem;
+  border-radius: 0.9rem;
+  background: var(--code-bg);
+}
+
+pre {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-x: auto;
+  color: var(--code);
+  font: 0.85rem/1.6 var(--mono);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.copy-button {
+  flex: none;
+  padding: 0.35rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  transition: transform 160ms ease;
+}
+
+.copy-button:hover {
+  transform: scale(1.05);
+}
+
+.button:focus-visible,
+.copy-button:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--lilac);
+  outline-offset: 3px;
+}
+
+@media (max-width: 48rem) {
+  .page {
+    width: min(100% - 1.5rem, 64rem);
+    padding-top: 1rem;
+  }
+
+  .app-card-body {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .app-shot {
+    padding: 1rem 1rem 0;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 30rem) {
+  .app-card-cta {
+    display: none;
+  }
+
+  .app-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
