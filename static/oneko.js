@@ -3,7 +3,8 @@
 //
 // Secrets: type "pspsps" to call it, or "nyan" for a rainbow run.
 // From the console: oneko.bite(), knock(), push(), steal(), perch(), scratch(),
-// peek(), nap(), pspsps(), nyan() and friend().
+// peek(), nap(), pspsps(), nyan(), friend(), pet(), play() and hat("pumpkin").
+// Add ?today=2026-10-31T03:00 to the URL to pretend it is another day or time.
 (function oneko() {
   const SIZE = 32;
   const TICK = 100;
@@ -33,7 +34,10 @@
 
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const touch = !window.matchMedia("(pointer: fine)").matches;
-  const today = new Date();
+  // A plain date means noon that day here, not midnight in London.
+  const asked = new URLSearchParams(window.location.search).get("today");
+  const pretend = asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) ? `${asked}T12:00` : asked;
+  const today = pretend && !Number.isNaN(Date.parse(pretend)) ? new Date(pretend) : new Date();
   const lateNight = today.getHours() >= 1 && today.getHours() < 6;
   const catDay = today.getMonth() === 7 && today.getDate() === 8;
 
@@ -105,6 +109,7 @@
   let lastPointerAt = 0;
   let nyanUntil = 0;
   let yarn = null;
+  let hat = null;
 
   const random = (list) => list[Math.floor(Math.random() * list.length)];
   const between = (min, max) => min + Math.random() * (max - min);
@@ -157,6 +162,11 @@
         cursor: grab; border-radius: 50%; translate: -50% -50%;
         background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23f462c6'/%3E%3Cg fill='none' stroke='%23211f2b' stroke-width='1.3' opacity='.55'%3E%3Cpath d='M3 9c6-2 12-2 18 1M2.5 14c7-3 13-3 19 0M6 20c3-6 8-12 13-15M5 5c5 2 9 8 10 17'/%3E%3C/g%3E%3C/svg%3E") center / contain; }
       .oneko-yarn:active { cursor: grabbing; }
+      .oneko-hat { position: absolute; left: 50%; top: -9px; width: 20px; height: 14px; translate: -50% 0;
+        pointer-events: none; background: center bottom / contain no-repeat; }
+      .oneko-hat-pumpkin { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14'%3E%3Cpath d='M10 3c1-2 2-3 3-3' stroke='%2333691e' stroke-width='1.6' fill='none'/%3E%3Cellipse cx='6.5' cy='9' rx='5' ry='4.6' fill='%23e8710a'/%3E%3Cellipse cx='13.5' cy='9' rx='5' ry='4.6' fill='%23e8710a'/%3E%3Cellipse cx='10' cy='9' rx='4.4' ry='4.8' fill='%23ff8c1a'/%3E%3C/svg%3E"); }
+      .oneko-hat-santa { width: 22px; height: 15px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 15'%3E%3Cpath d='M3 12C5 4 11 0 17 3l2 6' fill='%23d62828'/%3E%3Crect x='1' y='11' width='18' height='4' rx='2' fill='%23fff'/%3E%3Ccircle cx='19' cy='9' r='2.4' fill='%23fff'/%3E%3C/svg%3E"); }
+      .oneko-hat-crown { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14'%3E%3Cpath d='M2 13 1 3l5 4 4-6 4 6 5-4-1 10z' fill='%23ffcc00' stroke='%23b8860b' stroke-width='1'/%3E%3C/svg%3E"); }
     `;
     document.head.appendChild(style);
   }
@@ -285,6 +295,9 @@
       this.el = document.createElement("div");
       this.el.className = "oneko-cat";
       this.el.setAttribute("aria-hidden", "true");
+      this.hatEl = document.createElement("span");
+      this.el.appendChild(this.hatEl);
+      this.wearHat();
       this.el.addEventListener("click", (event) => {
         event.stopPropagation();
         this.petted();
@@ -292,6 +305,10 @@
       document.body.appendChild(this.el);
       this.place();
       this.setSprite("idle", 0);
+    }
+
+    wearHat() {
+      this.hatEl.className = hat ? `oneko-hat oneko-hat-${hat}` : "";
     }
 
     place() {
@@ -312,14 +329,17 @@
       const bubble = document.createElement("span");
       bubble.className = "oneko-bubble";
       bubble.textContent = text;
-      bubble.style.left = `${this.x}px`;
-      bubble.style.top = `${this.y - SIZE - 14}px`;
+      // Above the cat, or below it when there is no room up top.
+      const above = this.y - SIZE - 14;
+      bubble.style.left = `${Math.min(window.innerWidth - 60, Math.max(60, this.x))}px`;
+      bubble.style.top = `${above < 4 ? this.y + SIZE / 2 + 6 : above}px`;
       document.body.appendChild(bubble);
       setTimeout(() => bubble.remove(), 2300);
     }
 
     petted() {
       puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
+      window.dispatchEvent(new CustomEvent("oneko:meow"));
       if (this.loot) {
         this.giveBack();
         this.say("fine... (=｀ェ´=)");
@@ -704,6 +724,30 @@
       return this.start({ kind: "wander", frames: 1, where: () => spot, act: () => {} });
     }
 
+    // Run after something that moves, like Sonic, for a while.
+    chase(point, duration) {
+      const until = Date.now() + duration;
+      return this.start({
+        kind: "chase",
+        frames: 1,
+        speed: 16,
+        stubborn: true,
+        where: () => {
+          const spot = point();
+          if (!spot || Date.now() > until) {
+            return { sx: this.x, sy: this.y };
+          }
+          return { sx: spot.x, sy: spot.y };
+        },
+        act: () => {},
+        then: () => {
+          if (Date.now() < until && point()) {
+            this.chase(point, until - Date.now());
+          }
+        },
+      });
+    }
+
     come() {
       const spot = pointer || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       this.giveBack();
@@ -901,6 +945,17 @@
       this.el.style.rotate = `${(this.x + this.y) * 2}deg`;
     }
 
+    throwFrom(px, py) {
+      this.x = px;
+      this.y = py;
+      const angle = between(0, Math.PI * 2);
+      this.vx = Math.cos(angle) * 12;
+      this.vy = Math.sin(angle) * 12;
+      this.thrownAt = Date.now();
+      this.bats = 0;
+      this.roll();
+    }
+
     // Cats care for a few seconds after a throw, and bat it around a few times.
     interesting() {
       return !this.drag && Date.now() - this.thrownAt < 6000 && this.bats < 4;
@@ -1002,8 +1057,22 @@
     }
   }
 
+  function setHat(name) {
+    hat = name || null;
+    cats.forEach((cat) => cat.wearHat());
+  }
+
   const first = () => cats[0];
   window.oneko = {
+    pet: () => first().petted(),
+    hat: setHat,
+    cats: () => cats.map((cat) => ({ x: cat.x, y: cat.y })),
+    chase: (point, duration) => cats.forEach((cat) => cat.chase(point, duration)),
+    play: () => {
+      if (yarn && !yarn.interesting()) {
+        yarn.throwFrom(first().x, first().y);
+      }
+    },
     bite: () => first().bite(),
     knock: () => first().knock(),
     push: () => first().push(),
