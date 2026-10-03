@@ -1,4 +1,15 @@
 @font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/fonts/FiraCode-Latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
   font-family: "Nunito";
   font-style: normal;
   font-weight: 400 800;
@@ -9,49 +20,31 @@
     U+FEFF, U+FFFD;
 }
 
-/* Soft and bubbly: pastel candy colors, round corners, a rounded font. */
+/* 4st.li colors and type for titles, with softer rounded shapes of its own. */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
   font-family: Nunito, ui-rounded, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --bg: #fff6fb;
-  --bg-blob-1: #ffd9ec;
-  --bg-blob-2: #dcd6ff;
-  --surface: #ffffff;
-  --surface-soft: #fbefff;
-  --text: #2d2442;
-  --muted: #6e6485;
-  --accent: #ff5fa8;
-  --accent-ink: #ffffff;
-  --accent-soft: #ffe1ef;
-  --lilac: #8b7cf6;
-  --border: #f1dcef;
-  --shadow: 0 0.6rem 1.8rem rgb(140 80 140 / 14%);
-  --code-bg: #2d2442;
-  --code: #ffe1ef;
+  --mono: "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+  --bg: #211f2b;
+  --bg-blob-1: rgb(244 98 198 / 16%);
+  --bg-blob-2: rgb(139 124 246 / 12%);
+  --surface: #2a2836;
+  --surface-soft: #33303f;
+  --text: #eceae5;
+  --muted: #b3afbd;
+  --accent: #f462c6;
+  --accent-ink: #211f2b;
+  --accent-soft: rgb(244 98 198 / 16%);
+  --lilac: #a99bff;
+  --border: rgb(236 234 229 / 10%);
+  --shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 35%);
+  --code-bg: #1a1822;
+  --code: #eceae5;
 
   color: var(--text);
   background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1d1a2e;
-    --bg-blob-1: #3a2144;
-    --bg-blob-2: #262350;
-    --surface: #2a2540;
-    --surface-soft: #322b4c;
-    --text: #f6eefc;
-    --muted: #b9add0;
-    --accent: #ff7ab8;
-    --accent-ink: #1d1a2e;
-    --accent-soft: #4a2747;
-    --lilac: #a99bff;
-    --border: #3d3558;
-    --shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 35%);
-    --code-bg: #15121f;
-  }
 }
 
 * {
@@ -107,6 +100,7 @@ p {
 }
 
 .brand {
+  font-family: var(--mono);
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -126,6 +120,7 @@ p {
 }
 
 .header-link {
+  font-family: var(--mono);
   padding: 0.4rem 0.95rem;
   border-radius: 999px;
   background: var(--surface);
@@ -151,10 +146,11 @@ p {
 }
 
 h1 {
+  font-family: var(--mono);
   font-size: clamp(2.2rem, 6vw, 3.4rem);
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
 
 h1::after {
@@ -193,7 +189,7 @@ h1::after {
 }
 
 .app-card:hover {
-  box-shadow: 0 1rem 2.5rem rgb(255 95 168 / 22%);
+  box-shadow: 0 1rem 2.5rem rgb(244 98 198 / 25%);
   transform: translateY(-4px) rotate(-0.4deg);
 }
 
@@ -210,7 +206,7 @@ h1::after {
   width: 100%;
   height: auto;
   border-radius: 0.7rem 0.7rem 0 0;
-  box-shadow: 0 0.6rem 1.6rem rgb(45 36 66 / 25%);
+  box-shadow: 0 0.6rem 1.6rem rgb(0 0 0 / 40%);
   transition: transform 300ms ease;
 }
 
@@ -231,7 +227,9 @@ h1::after {
 }
 
 .app-card h2 {
-  font-size: 1.2rem;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 1.15rem;
   font-weight: 800;
 }
 
@@ -242,6 +240,7 @@ h1::after {
 }
 
 .app-card-cta {
+  font-family: var(--mono);
   flex: none;
   padding: 0.45rem 1rem;
   border-radius: 999px;
@@ -270,7 +269,7 @@ h1::after {
 .app-icon-large {
   width: clamp(4.5rem, 13vw, 6.5rem);
   height: clamp(4.5rem, 13vw, 6.5rem);
-  filter: drop-shadow(0 0.5rem 1rem rgb(45 36 66 / 25%));
+  filter: drop-shadow(0 0.5rem 1rem rgb(0 0 0 / 40%));
 }
 
 .app-icon-fallback {
@@ -306,6 +305,7 @@ h1::after {
 }
 
 .button {
+  font-family: var(--mono);
   display: inline-flex;
   min-height: 3rem;
   align-items: center;
@@ -331,7 +331,7 @@ h1::after {
 .button-primary {
   padding-inline: 1.8rem;
   background: var(--accent);
-  box-shadow: 0 0.6rem 1.6rem rgb(255 95 168 / 35%);
+  box-shadow: 0 0.6rem 1.6rem rgb(244 98 198 / 30%);
   color: var(--accent-ink);
 }
 
@@ -374,7 +374,7 @@ h1::after {
   width: 100%;
   height: auto;
   border-radius: 0.9rem;
-  box-shadow: 0 1rem 2.5rem rgb(45 36 66 / 25%);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 40%);
 }
 
 /* Terminal */
@@ -422,7 +422,7 @@ summary::before {
   border-radius: 0.4rem;
   background: var(--accent-soft);
   color: var(--accent);
-  font: 700 0.8rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font: 700 0.8rem/1.4 var(--mono);
 }
 
 .command-row {
@@ -440,7 +440,7 @@ pre {
   margin: 0;
   overflow-x: auto;
   color: var(--code);
-  font: 0.85rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font: 0.85rem/1.6 var(--mono);
   white-space: pre-wrap;
   word-break: break-all;
 }

@@ -354,7 +354,7 @@ if ! cmp -s "$repository_root/assets/apps/io.github.astrovm.AdventureMods/icon.s
 fi
 pass "generated site shows app artwork and falls back when an app has none"
 
-for static_file in oneko.js oneko.gif favicon.png apple-touch-icon.png fonts/Nunito-Latin.woff2; do
+for static_file in oneko.js oneko.gif favicon.png apple-touch-icon.png fonts/Nunito-Latin.woff2 fonts/FiraCode-Latin.woff2; do
   if ! cmp -s "$repository_root/static/$static_file" "$site_directory/$static_file"; then
     echo "not ok - generated site is missing static/$static_file" >&2
     exit 1
