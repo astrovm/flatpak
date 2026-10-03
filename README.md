@@ -34,6 +34,7 @@ flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpa
 [`apps.json`](apps.json) lists the apps. It drives publishing, verification, health checks and the website.
 
 The website shows `assets/apps/<app-id>/icon.svg` and `screenshot.webp` when an app has them.
+Files in `static/` (the cat, favicon and font) are copied to the site as they are.
 
 ### How it works
 

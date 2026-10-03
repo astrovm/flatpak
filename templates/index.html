@@ -3,44 +3,40 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>astrovm Flatpak Repository</title>
-    <meta
-      name="description"
-      content="Linux apps by astrovm. Install them with Flatpak and they stay up to date."
-    >
-    <meta name="theme-color" content="#0b0d12">
+    <title>astro's apps</title>
+    <meta name="description" content="Linux apps by astro. Install one with Flatpak and it stays up to date.">
+    <meta name="theme-color" content="#211f2b">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="astrovm Flatpak Repository">
-    <meta property="og:description" content="Linux apps by astrovm. Install them with Flatpak and they stay up to date.">
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2312151c'/%3E%3Ctext x='32' y='44' font-family='system-ui,sans-serif' font-size='36' font-weight='800' fill='%235b9cff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
-    >
+    <meta property="og:title" content="astro's apps">
+    <meta property="og:description" content="Linux apps by astro. Install one with Flatpak and it stays up to date.">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" href="/fonts/FiraCode-Latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/styles.css?v=@STYLES_VERSION@">
+    <script src="/oneko.js" defer></script>
   </head>
   <body>
     <main class="page">
       <header class="site-header">
-        <a class="brand" href="/">
-          astrovm
-        </a>
+        <div class="header-logo">
+          <a class="logo" href="/">astro &lt;(^^,)&gt;</a>
+        </div>
+        <a class="header-link" href="https://4st.li/">4st.li</a>
       </header>
 
       <section class="hero">
-        <h1>Linux apps by astrovm</h1>
-        <p class="lede">
-          Install one and it updates with the rest of your system.
-        </p>
+        <h1>apps for linux</h1>
+        <p class="lede">Install one and it updates with the rest of your system.</p>
       </section>
 
-      <section class="catalog" aria-label="Available apps">
+      <section class="catalog" aria-label="Apps">
         <div class="catalog-list">
           <!-- APP_CARDS -->
         </div>
       </section>
 
       <details class="terminal">
-        <summary>Using the terminal?</summary>
+        <summary>using the terminal?</summary>
         <div class="command-row">
           <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo</code></pre>
           <button
@@ -48,7 +44,7 @@
             type="button"
             data-copy="flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo"
           >
-            Copy
+            copy
           </button>
         </div>
       </details>
@@ -66,9 +62,9 @@
             document.execCommand("copy");
             field.remove();
           }
-          button.textContent = "Copied";
+          button.textContent = "copied ♡";
           setTimeout(() => {
-            button.textContent = "Copy";
+            button.textContent = "copy";
           }, 2000);
         });
       });

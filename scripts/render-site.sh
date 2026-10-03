@@ -91,7 +91,7 @@ render_app_card()
                 <h2>$app_name</h2>
                 <p>$app_summary</p>
               </div>
-              <span class="app-card-cta">Install</span>
+              <span class="app-card-cta">install</span>
             </div>
           </a>
 EOF
@@ -161,6 +161,7 @@ sed "s|@GPG_KEY@|$(escape_sed_replacement "$public_key")|" \
   > "$output_directory/astrovm.flatpakrepo"
 cp "$public_key_file" "$output_directory/astrovm.gpg"
 cp "$stylesheet_file" "$output_directory/styles.css"
+cp -R "$repository_root/static/." "$output_directory/"
 
 while IFS= read -r repository; do
   render_app_files "$repository"
