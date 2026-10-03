@@ -1,9 +1,11 @@
 // A cat that chases the cursor (or your finger) and gets up to mischief when bored.
 // Based on oneko.js by adryd325 (MIT).
 //
-// Secrets: type "pspsps" to call it, or "nyan" for a rainbow run.
+// Rub it with the mouse to make it purr. Select some text and it may come paw at it.
+// Secrets: type "pspsps" to call it, "nyan" for a rainbow run or "fish" for a treat.
 // From the console: oneko.bite(), knock(), push(), steal(), perch(), scratch(),
-// peek(), nap(), pspsps(), nyan(), friend(), pet(), play() and hat("pumpkin").
+// peek(), nap(), hunt(), box(), pounce(), treat(), pspsps(), nyan(), friend(),
+// pet(), play() and hat("pumpkin").
 // Add ?today=2026-10-31T03:00 to the URL to pretend it is another day or time.
 // Put data-oneko-home on an element and the cat naps there until someone clicks it.
 (function oneko() {
@@ -113,9 +115,40 @@
   let hat = null;
   const home = document.querySelector("[data-oneko-home]");
   let parked = Boolean(home);
+  let butterfly = null;
+  const treats = [];
 
   const random = (list) => list[Math.floor(Math.random() * list.length)];
   const between = (min, max) => min + Math.random() * (max - min);
+
+  // The cat remembers you between visits.
+  const memory = {
+    get(key, fallback) {
+      try {
+        const value = localStorage.getItem(`oneko.${key}`);
+        return value === null ? fallback : JSON.parse(value);
+      } catch {
+        return fallback;
+      }
+    },
+    set(key, value) {
+      try {
+        localStorage.setItem(`oneko.${key}`, JSON.stringify(value));
+      } catch {
+        // Private mode: the cat forgets, which is fine.
+      }
+    },
+  };
+
+  // Every pet counts. Some numbers are special, and 100 earns a crown.
+  function countPet() {
+    const pets = memory.get("pets", 0) + 1;
+    memory.set("pets", pets);
+    if (pets === 100 && !hat) {
+      setHat("crown");
+    }
+    return { 10: "we're friends now ♡", 50: "best friends ♡", 100: "i'm royalty now ♛" }[pets];
+  }
 
   function onScreen(rect, margin = 8) {
     return (
@@ -169,6 +202,22 @@
         pointer-events: none; background: center bottom / contain no-repeat; }
       .oneko-hat-pumpkin { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14'%3E%3Cpath d='M10 3c1-2 2-3 3-3' stroke='%2333691e' stroke-width='1.6' fill='none'/%3E%3Cellipse cx='6.5' cy='9' rx='5' ry='4.6' fill='%23e8710a'/%3E%3Cellipse cx='13.5' cy='9' rx='5' ry='4.6' fill='%23e8710a'/%3E%3Cellipse cx='10' cy='9' rx='4.4' ry='4.8' fill='%23ff8c1a'/%3E%3C/svg%3E"); }
       .oneko-hat-santa { width: 22px; height: 15px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 15'%3E%3Cpath d='M3 12C5 4 11 0 17 3l2 6' fill='%23d62828'/%3E%3Crect x='1' y='11' width='18' height='4' rx='2' fill='%23fff'/%3E%3Ccircle cx='19' cy='9' r='2.4' fill='%23fff'/%3E%3C/svg%3E"); }
+      .oneko-fish, .oneko-box, .oneko-butterfly { position: fixed; z-index: 2147483646; pointer-events: none;
+        background: center / contain no-repeat; }
+      .oneko-fish { width: 20px; height: 12px; translate: -50% -50%;
+        animation: oneko-drop 700ms cubic-bezier(.5,0,1,.5), oneko-land 300ms 700ms ease-out;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 12'%3E%3Cpath d='M0 1l6 5-6 5z' fill='%235fb4e8'/%3E%3Cellipse cx='12' cy='6' rx='8' ry='5' fill='%237cc8f5'/%3E%3Ccircle cx='16' cy='5' r='1.2' fill='%23211f2b'/%3E%3C/svg%3E"); }
+      @keyframes oneko-drop { from { translate: -50% calc(-50% - var(--fall)); } }
+      @keyframes oneko-land { 50% { translate: -50% calc(-50% - 6px); } }
+      .oneko-box { z-index: 2147483647; width: 34px; height: 22px; translate: -50% 0;
+        transform-origin: bottom; animation: oneko-box-in 300ms cubic-bezier(.3,1.6,.6,1);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 34 22'%3E%3Cg stroke='%236b4423'%3E%3Cpath d='M3 7h28v14H3z' fill='%23c68a4e'/%3E%3Cpath d='M3 7 .5 2h9L12 7zm28 0 2.5-5h-9L22 7z' fill='%23d9a066'/%3E%3C/g%3E%3Cpath d='M3.5 7.5h27v2h-27z' fill='%238a5a2b'/%3E%3C/svg%3E"); }
+      @keyframes oneko-box-in { from { scale: 0.3; opacity: 0; } }
+      .oneko-box-gone { transition: opacity 400ms ease, translate 400ms ease; opacity: 0; translate: -50% 8px; }
+      .oneko-butterfly { width: 16px; height: 14px; translate: -50% -50%;
+        animation: oneko-flutter 160ms ease-in-out infinite alternate;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 14'%3E%3Cellipse cx='4.5' cy='5' rx='4' ry='4.5' fill='%23f462c6'/%3E%3Cellipse cx='11.5' cy='5' rx='4' ry='4.5' fill='%23f462c6'/%3E%3Cellipse cx='5' cy='11' rx='3' ry='2.5' fill='%23ffa8e4'/%3E%3Cellipse cx='11' cy='11' rx='3' ry='2.5' fill='%23ffa8e4'/%3E%3Crect x='7.3' y='2' width='1.4' height='11' rx='.7' fill='%23211f2b'/%3E%3C/svg%3E"); }
+      @keyframes oneko-flutter { to { scale: 0.35 1; } }
       .oneko-hat-crown { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14'%3E%3Cpath d='M2 13 1 3l5 4 4-6 4 6 5-4-1 10z' fill='%23ffcc00' stroke='%23b8860b' stroke-width='1'/%3E%3C/svg%3E"); }
     `;
     document.head.appendChild(style);
@@ -295,6 +344,7 @@
       this.plan = null;
       this.loot = null;
       this.clicks = 0;
+      this.purrUntil = 0;
       this.el = document.createElement("div");
       this.el.className = "oneko-cat";
       this.el.setAttribute("aria-hidden", "true");
@@ -305,6 +355,7 @@
         event.stopPropagation();
         this.petted();
       });
+      this.listenForRubs();
       document.body.appendChild(this.el);
       this.place();
       this.setSprite("idle", 0);
@@ -348,15 +399,16 @@
         return;
       }
       window.dispatchEvent(new CustomEvent("oneko:meow"));
+      const milestone = countPet();
       if (this.loot) {
         this.giveBack();
         this.say("fine... (=｀ェ´=)");
-      } else if (this.plan && this.plan.kind === "perch") {
-        this.plan = null;
+      } else if (this.plan && ["perch", "box"].includes(this.plan.kind)) {
+        this.drop();
         this.say("purr ♡");
         this.wander();
       } else {
-        this.say(lateNight ? "go to sleep (－_－) zzZ" : random(MEOWS));
+        this.say(milestone || (lateNight ? "go to sleep (－_－) zzZ" : random(MEOWS)));
       }
       this.clicks += 1;
       clearTimeout(this.clickTimer);
@@ -365,6 +417,50 @@
         this.clicks = 0;
         window.activateTerminal();
       }
+    }
+
+    // Rubbing back and forth over the cat with the mouse makes it purr.
+    listenForRubs() {
+      let lastX = null;
+      let way = 0;
+      let flips = 0;
+      let flippedAt = 0;
+      this.el.addEventListener("pointermove", (event) => {
+        if (event.pointerType !== "mouse" || parked) {
+          return;
+        }
+        const dx = event.clientX - (lastX ?? event.clientX);
+        lastX = event.clientX;
+        if (Math.abs(dx) < 2) {
+          return;
+        }
+        if (Date.now() - flippedAt > 600) {
+          flips = 0;
+        }
+        if (Math.sign(dx) !== way) {
+          way = Math.sign(dx);
+          flips += 1;
+          flippedAt = Date.now();
+        }
+        if (flips >= 4) {
+          flips = 0;
+          this.purr();
+        }
+      });
+      this.el.addEventListener("pointerleave", () => {
+        lastX = null;
+      });
+    }
+
+    purr() {
+      const purring = Date.now() < this.purrUntil;
+      this.purrUntil = Date.now() + 1800;
+      if (purring) {
+        return;
+      }
+      this.drop();
+      this.say(countPet() || "purrrr ♡");
+      window.dispatchEvent(new CustomEvent("oneko:purr"));
     }
 
     // Walk one step toward (tx, ty). Returns true once there.
@@ -448,15 +544,17 @@
         return;
       }
       const options = [
-        [0.2, () => this.bite()],
-        [0.08, () => this.knock()],
-        [0.1, () => this.push()],
-        [0.12, () => this.steal()],
-        [0.08, () => this.perch()],
-        [0.1, () => this.scratch()],
-        [0.1, () => this.peek()],
-        [0.12, () => this.nap()],
-        [0.1, () => (this.idleAnimation = "scratchSelf")],
+        [0.17, () => this.bite()],
+        [0.07, () => this.knock()],
+        [0.09, () => this.push()],
+        [0.11, () => this.steal()],
+        [0.07, () => this.perch()],
+        [0.09, () => this.scratch()],
+        [0.09, () => this.peek()],
+        [0.11, () => this.nap()],
+        [0.07, () => this.hunt()],
+        [0.07, () => this.box()],
+        [0.06, () => (this.idleAnimation = "scratchSelf")],
       ];
       let roll = Math.random();
       for (const [weight, act] of options) {
@@ -471,9 +569,19 @@
     }
 
     start(plan) {
+      this.drop();
       this.plan = { frame: 0, arrived: false, ...plan };
       this.resetIdleAnimation();
       return true;
+    }
+
+    // Forget the plan, tidying up anything it left behind.
+    drop() {
+      const plan = this.plan;
+      this.plan = null;
+      if (plan && plan.cleanup) {
+        plan.cleanup();
+      }
     }
 
     // Plans say where to stand (where) and what to do once there (act).
@@ -691,7 +799,7 @@
           this.el.style.clipPath = "inset(0 0 45% 0)";
           this.setSprite(frame % 25 < 3 ? "alert" : "idle", 0);
         },
-        then: () => {
+        cleanup: () => {
           this.el.style.clipPath = "";
         },
       });
@@ -721,6 +829,129 @@
             puff("z", "oneko-z", this.x + 8, this.y - 10, "6px");
           }
         },
+      });
+    }
+
+    // A butterfly flutters by and the cat tries to catch it.
+    hunt() {
+      if (butterfly) {
+        return false;
+      }
+      const fly = (butterfly = new Butterfly());
+      const until = Date.now() + 12000;
+      return this.start({
+        kind: "hunt",
+        el: fly.el,
+        frames: 8,
+        speed: 13,
+        where: () => (Date.now() > until ? { sx: this.x, sy: this.y } : { sx: fly.x, sy: fly.y + 14 }),
+        act: (frame) => {
+          this.setSprite("scratchWallN", frame);
+          if (frame === 1) {
+            const missed = Date.now() > until;
+            fly.leave();
+            this.say(missed ? "next time... (=ↀωↀ=)" : random(["!!", "so close (=ↀωↀ=)", "mrrrow!"]));
+          }
+        },
+      });
+    }
+
+    // If it fits, it sits.
+    box() {
+      const bx = Math.max(40, Math.min(window.innerWidth - 40, this.x + between(-200, 200)));
+      const by = window.innerHeight - between(40, 90);
+      const el = document.createElement("div");
+      el.className = "oneko-box";
+      el.setAttribute("aria-hidden", "true");
+      el.style.left = `${bx}px`;
+      el.style.top = `${by}px`;
+      document.body.appendChild(el);
+      return this.start({
+        kind: "box",
+        el,
+        frames: 160,
+        stubborn: true,
+        where: () => ({ sx: bx, sy: by + 5 }),
+        act: (frame) => {
+          if (frame === 2) {
+            this.say("if i fits, i sits");
+          }
+          if (frame > 60 && frame < 140) {
+            this.setSprite("sleeping", Math.floor(frame / 4));
+          } else {
+            this.setSprite(frame % 50 < 3 ? "alert" : "idle", 0);
+          }
+        },
+        then: () => {
+          this.y = by - SIZE / 2;
+          this.place();
+        },
+        cleanup: () => {
+          el.classList.add("oneko-box-gone");
+          setTimeout(() => el.remove(), 400);
+        },
+      });
+    }
+
+    // Wiggle, then leap at the cursor.
+    pounce() {
+      return this.start({
+        kind: "pounce",
+        frames: 10,
+        stubborn: true,
+        where: () => ({ sx: this.x, sy: this.y }),
+        act: (frame) => {
+          this.setSprite("alert", 0);
+          this.el.style.translate = `${frame % 2 ? 2 : -2}px 0`;
+        },
+        cleanup: () => {
+          this.el.style.translate = "";
+        },
+        then: () =>
+          this.start({
+            kind: "leap",
+            frames: 1,
+            speed: 30,
+            stubborn: true,
+            where: () => (pointer ? { sx: pointer.x, sy: pointer.y } : { sx: this.x, sy: this.y }),
+            act: () => {},
+            then: () => puff("!", "oneko-z", this.x, this.y - SIZE / 2),
+          }),
+      });
+    }
+
+    // Paw at the end of the text you selected.
+    swat(rect) {
+      return this.start({
+        kind: "swat",
+        frames: 12,
+        where: () => ({ sx: rect.right - 6, sy: rect.top - SIZE / 2 + 4 }),
+        act: (frame) => this.setSprite("scratchWallS", frame),
+      });
+    }
+
+    eat(treat) {
+      return this.start({
+        kind: "eat",
+        frames: 14,
+        stubborn: true,
+        where: () => ({ sx: this.x, sy: this.y }),
+        act: (frame) => {
+          this.setSprite(frame % 4 < 2 ? "tired" : "idle", 0);
+          if (frame % 4 === 1 && frame < 12) {
+            puff("nom", "oneko-z", this.x + 6, this.y - 8, `${between(-8, 8)}px`);
+          }
+          if (frame === 6) {
+            treat.el.style.clipPath = "inset(0 50% 0 0)";
+          }
+          if (frame === 12) {
+            treat.el.remove();
+            puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
+            this.say("nom nom ♡");
+            window.dispatchEvent(new CustomEvent("oneko:nom"));
+          }
+        },
+        cleanup: () => treat.el.remove(),
       });
     }
 
@@ -759,7 +990,7 @@
     come() {
       const spot = pointer || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       this.giveBack();
-      this.el.style.clipPath = "";
+      this.drop();
       this.say("!");
       this.idleTime = 0;
       return this.start({
@@ -775,7 +1006,7 @@
     doPlan() {
       const plan = this.plan;
       if (plan.el && !plan.el.isConnected) {
-        this.plan = null;
+        this.drop();
         return;
       }
       const where = plan.where();
@@ -793,7 +1024,7 @@
       plan.frame += 1;
       plan.act(plan.frame, where);
       if (plan.frame >= plan.frames) {
-        this.plan = null;
+        this.drop();
         if (plan.then) {
           plan.then();
         }
@@ -803,10 +1034,7 @@
     // Stop what it is doing, unless it is sitting somewhere on purpose.
     distract() {
       if (this.plan && !this.plan.stubborn) {
-        if (this.plan.then && this.plan.kind === "peek") {
-          this.plan.then();
-        }
-        this.plan = null;
+        this.drop();
       }
     }
 
@@ -823,6 +1051,14 @@
         return;
       }
 
+      if (Date.now() < this.purrUntil) {
+        this.setSprite("tired", 0);
+        if (this.frameCount % 3 === 0) {
+          puff("♡", "oneko-heart", this.x + between(-8, 8), this.y - SIZE / 2, `${between(-14, 14)}px`);
+        }
+        return;
+      }
+
       if (this.plan) {
         this.doPlan();
         return;
@@ -830,6 +1066,15 @@
 
       if (Date.now() < nyanUntil) {
         this.wander();
+        return;
+      }
+
+      const treat = treats.find((t) => t.landed);
+      if (treat) {
+        if (this.step(treat.x, treat.y - 8, 12, 16)) {
+          treats.splice(treats.indexOf(treat), 1);
+          this.eat(treat);
+        }
         return;
       }
 
@@ -849,6 +1094,12 @@
       }
 
       if (pointer) {
+        // After sitting a while, it sometimes pounces instead of walking over.
+        const far = Math.hypot(this.x - pointer.x, this.y - pointer.y) > 160;
+        if (!touch && far && this.idleTime > 20 && Math.random() < 0.4) {
+          this.pounce();
+          return;
+        }
         if (!this.step(pointer.x, pointer.y, touch ? 12 : 48)) {
           this.resetIdleAnimation();
           return;
@@ -993,6 +1244,123 @@
     }
   }
 
+  // A butterfly that flutters around, dodges the cat and flies off after a while.
+
+  class Butterfly {
+    constructor() {
+      this.x = Math.random() < 0.5 ? -10 : window.innerWidth + 10;
+      this.y = between(80, window.innerHeight * 0.6);
+      this.t = 0;
+      this.dodgedAt = 0;
+      this.leaving = false;
+      this.aim();
+      this.el = document.createElement("div");
+      this.el.className = "oneko-butterfly";
+      this.el.setAttribute("aria-hidden", "true");
+      document.body.appendChild(this.el);
+      this.timer = setTimeout(() => this.leave(), 15000);
+      requestAnimationFrame(() => this.tick());
+    }
+
+    aim(x = between(60, window.innerWidth - 60), y = between(80, window.innerHeight - 80)) {
+      this.tx = Math.max(30, Math.min(window.innerWidth - 30, x));
+      this.ty = Math.max(50, Math.min(window.innerHeight - 30, y));
+    }
+
+    leave() {
+      clearTimeout(this.timer);
+      this.leaving = true;
+      this.tx = this.x + between(-200, 200);
+      this.ty = -80;
+    }
+
+    tick() {
+      this.t += 1;
+      const dx = this.tx - this.x;
+      const dy = this.ty - this.y;
+      const distance = Math.hypot(dx, dy) || 1;
+      if (distance < 10 && !this.leaving) {
+        this.aim();
+      }
+      const speed = this.leaving ? 3 : 1.3;
+      this.x += (dx / distance) * speed;
+      this.y += (dy / distance) * speed + Math.sin(this.t / 6) * 1.2;
+      const close = cats.some((cat) => Math.hypot(cat.x - this.x, cat.y - this.y) < 50);
+      if (close && !this.leaving && Date.now() - this.dodgedAt > 1500) {
+        // A little hop up and out of reach.
+        this.dodgedAt = Date.now();
+        this.aim(this.x + between(-150, 150), this.y - between(60, 120));
+      }
+      this.el.style.left = `${this.x}px`;
+      this.el.style.top = `${this.y}px`;
+      if (this.leaving && this.y < -30) {
+        this.el.remove();
+        butterfly = null;
+        return;
+      }
+      requestAnimationFrame(() => this.tick());
+    }
+  }
+
+  // A fish falls from the sky and the closest cat runs to eat it.
+  function dropTreat(x = pointer ? pointer.x : between(80, window.innerWidth - 80)) {
+    const tx = Math.max(20, Math.min(window.innerWidth - 20, x));
+    const ty = between(window.innerHeight * 0.45, window.innerHeight - 60);
+    const el = document.createElement("div");
+    el.className = "oneko-fish";
+    el.setAttribute("aria-hidden", "true");
+    el.style.left = `${tx}px`;
+    el.style.top = `${ty}px`;
+    el.style.setProperty("--fall", `${ty + 20}px`);
+    document.body.appendChild(el);
+    const treat = { x: tx, y: ty, el, landed: false };
+    treats.push(treat);
+    setTimeout(() => (treat.landed = true), 700);
+    if (parked) {
+      wake();
+    }
+  }
+
+  // Select some text and the cat may come paw at it.
+  function listenForSelections() {
+    let timer = null;
+    document.addEventListener("selectionchange", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const selection = document.getSelection();
+        const cat = cats[0];
+        if (parked || !selection || selection.isCollapsed || !selection.toString().trim()) {
+          return;
+        }
+        if ((cat.plan && cat.plan.stubborn) || Math.random() < 0.5) {
+          return;
+        }
+        const rects = selection.getRangeAt(0).getClientRects();
+        const rect = rects[rects.length - 1];
+        if (rect && onScreen(rect, 0)) {
+          cat.swat(rect);
+        }
+      }, 700);
+    });
+  }
+
+  // Say hi to people who come back, after a while away or after switching tabs.
+  function greet() {
+    const seen = memory.get("seen", 0);
+    memory.set("seen", Date.now());
+    if (seen && Date.now() - seen > 6 * 60 * 60 * 1000 && !lateNight) {
+      setTimeout(() => cats[0].say("welcome back ♡"), 2000);
+    }
+    let leftAt = 0;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        leftAt = Date.now();
+      } else if (leftAt && Date.now() - leftAt > 10000 && !parked) {
+        cats.forEach((cat) => cat.say("you're back! ♡"));
+      }
+    });
+  }
+
   // Keyboard secrets.
 
   function listenForSecrets() {
@@ -1009,6 +1377,9 @@
       } else if (typed.endsWith("nyan")) {
         typed = "";
         startNyan();
+      } else if (typed.endsWith("fish")) {
+        typed = "";
+        dropTreat();
       }
     });
   }
@@ -1058,6 +1429,9 @@
       return;
     }
     addStyles();
+    if (memory.get("pets", 0) >= 100) {
+      hat = "crown";
+    }
     const start = home ? homeSpot() : touch ? { x: window.innerWidth - 40, y: window.innerHeight - 40 } : { x: 32, y: 32 };
     cats.push(new Cat(start.x, start.y));
     if (home) {
@@ -1098,6 +1472,8 @@
       addYarn();
     }
     listenForSecrets();
+    listenForSelections();
+    greet();
     setInterval(() => {
       cats.forEach((cat) => cat.frame());
       if (yarn) {
@@ -1135,6 +1511,11 @@
     scratch: () => first().scratch(),
     peek: () => first().peek(),
     nap: () => first().nap(),
+    hunt: () => first().hunt(),
+    box: () => first().box(),
+    pounce: () => first().pounce(),
+    treat: dropTreat,
+    pets: () => memory.get("pets", 0),
     pspsps,
     nyan: startNyan,
     friend: addFriend,
