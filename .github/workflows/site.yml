@@ -1,0 +1,61 @@
+name: Refresh website
+
+# Website changes on main go live without waiting for the next app release.
+# apps.json is left out: a new app needs a release before its pages verify.
+on:
+  push:
+    branches: [main]
+    paths:
+      - templates/**
+      - static/**
+      - assets/**
+      - scripts/render-site.sh
+      - scripts/refresh-site.sh
+  workflow_dispatch:
+
+# Shares the publishing queue, so it never races a release.
+concurrency:
+  group: flatpak-repository
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y flatpak jq ostree
+
+      - name: Check out the published site
+        run: |
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          git worktree add -B gh-pages site origin/gh-pages
+
+      - name: Refresh website
+        run: scripts/refresh-site.sh site
+
+      - name: Commit website
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          git -C site config user.name "github-actions[bot]"
+          git -C site config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C site add --all
+
+          if git -C site diff --cached --quiet; then
+            echo "::notice::The website is already up to date"
+            exit 0
+          fi
+
+          tree=$(git -C site write-tree)
+          commit=$(printf 'Refresh website from %s\n' "$SOURCE_COMMIT" | git -C site commit-tree "$tree")
+          git -C site push --force origin "$commit:refs/heads/gh-pages"

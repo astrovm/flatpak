@@ -300,6 +300,37 @@ expect_success \
   "a published site verifies on its own" \
   "$scripts/verify-repository.sh" "$site"
 
+# Refreshing the website keeps the published repository and key.
+refreshed_site=$temporary_directory/refreshed-site
+cp -R "$site" "$refreshed_site"
+printf 'stale\n' > "$refreshed_site/stale.html"
+rm "$refreshed_site/index.html"
+cp "$refreshed_site/repo/refs-list" "$temporary_directory/refs-before"
+cp "$refreshed_site/astrovm.gpg" "$temporary_directory/key-before"
+expect_success \
+  "the website is refreshed on a published site and verified" \
+  env -u GH_TOKEN -u FLATPAK_GPG_PRIVATE_KEY -u FLATPAK_GPG_KEY_ID \
+  "$scripts/refresh-site.sh" "$refreshed_site"
+if [ -e "$refreshed_site/stale.html" ] ||
+  [ ! -s "$refreshed_site/index.html" ] ||
+  [ ! -d "$refreshed_site/.git" ] ||
+  [ "$(cat "$refreshed_site/CNAME")" != "flatpak.4st.li" ] ||
+  ! cmp -s "$temporary_directory/refs-before" "$refreshed_site/repo/refs-list" ||
+  ! cmp -s "$temporary_directory/key-before" "$refreshed_site/astrovm.gpg"; then
+  fail "refreshing changed the repository or left the old website behind"
+fi
+pass "refreshing regenerates the website and keeps the repository and key"
+
+expect_failure \
+  "refreshing requires one argument" \
+  "usage:" \
+  "$scripts/refresh-site.sh"
+mkdir "$temporary_directory/unpublished-site"
+expect_failure \
+  "refreshing requires a published repository" \
+  "No published repository to refresh" \
+  "$scripts/refresh-site.sh" "$temporary_directory/unpublished-site"
+
 fresh_site=$temporary_directory/fresh-site
 expect_failure \
   "a new repository must contain every registered application" \
