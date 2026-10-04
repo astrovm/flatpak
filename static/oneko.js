@@ -115,6 +115,8 @@
   let lastPointerAt = 0;
   let nyanUntil = 0;
   let yarn = null;
+  // Another cat can take over the page (the terminal's oneko_custom). Ours steps out.
+  let away = false;
   let hat = null;
   let home = document.querySelector("[data-oneko-home]");
   const reading = () => location.pathname.includes("/blog/") && Boolean(document.querySelector(".post:not(.on-list) .post-content"));
@@ -400,7 +402,7 @@
     }
 
     say(text) {
-      if (quiet()) return;
+      if (quiet() || away) return;
       const bubble = document.createElement("span");
       bubble.className = "oneko-bubble";
       bubble.textContent = text;
@@ -413,6 +415,7 @@
     }
 
     petted() {
+      if (away) return;
       invite();
       puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
       if (parked) {
@@ -1156,6 +1159,7 @@
     }
 
     frame() {
+      if (away) return;
       this.frameCount += 1;
       this.el.hidden = Boolean(reading() && this.leader);
       if (this.el.hidden) return;
@@ -1698,7 +1702,7 @@
     setInterval(() => {
       cats.forEach((cat) => cat.frame());
       if (yarn) {
-        yarn.el.hidden = quiet() || !roomy() && !yarn.drag && !yarn.interesting() && !yarn.rolling;
+        yarn.el.hidden = away || quiet() || !roomy() && !yarn.drag && !yarn.interesting() && !yarn.rolling;
       }
     }, TICK);
 
@@ -1713,7 +1717,19 @@
   }
 
   const first = () => cats[0];
+  function stepOut(out) {
+    away = out;
+    cats.forEach((cat) => {
+      cat.drop();
+      cat.el.hidden = out;
+      if (!out) cat.frame();
+    });
+    if (yarn) yarn.el.hidden = out;
+  }
+
   window.oneko = {
+    hide: () => stepOut(true),
+    show: () => stepOut(false),
     pet: () => first().petted(),
     hat: setHat,
     cats: () => cats.map((cat) => ({ x: cat.x, y: cat.y })),
