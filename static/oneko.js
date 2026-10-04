@@ -11,6 +11,9 @@
 (function oneko() {
   const SIZE = 32;
   const TICK = 100;
+  const FRAME = 1000 / 60;
+  const YARN_RADIUS = 12;
+  const YARN_TOP_SPEED = 40;
   const SPEED = 10;
   const HEAL_AFTER = 30000;
   const MAX_BITES = 3;
@@ -574,7 +577,7 @@
     }
 
     // Walk one step toward (tx, ty). Returns true once there.
-    step(tx, ty, closeEnough, speed = SPEED) {
+    step(tx, ty, closeEnough, speed = SPEED, prints = true) {
       const dx = this.x - tx;
       const dy = this.y - ty;
       const distance = Math.hypot(dx, dy);
@@ -595,7 +598,7 @@
       this.x -= (dx / distance) * move;
       this.y -= (dy / distance) * move;
       this.place();
-      this.trail(Math.atan2(-dy, -dx));
+      if (prints) this.trail(Math.atan2(-dy, -dx));
       return false;
     }
 
@@ -1164,8 +1167,16 @@
         this.drop();
         if (this.loot) this.giveBack();
         const spot = this.readerSpot || progressSpot();
-        this.x = Math.max(16, Math.min(window.innerWidth - 16, spot.x));
-        this.y = Math.max(16, Math.min(window.innerHeight - 16, spot.y));
+        const x = Math.max(16, Math.min(window.innerWidth - 16, spot.x));
+        const y = Math.max(16, Math.min(window.innerHeight - 16, spot.y));
+        // Far from its spot (a new article, a big jump): it runs there, quietly.
+        if (!calm && Math.hypot(this.x - x, this.y - y) > 40) {
+          this.idleTime = 0;
+          this.step(x, y, 40, 30, false);
+          return;
+        }
+        this.x = x;
+        this.y = y;
         this.place();
         const max = document.documentElement.scrollHeight - window.innerHeight;
         const name = this.readerSpot || calm ? "idle" : window.scrollY >= max - 4 ? "sleeping" : Date.now() - readingScrollAt < 300 ? "E" : "idle";
@@ -1260,6 +1271,7 @@
       this.y = window.innerHeight - 28;
       this.vx = 0;
       this.vy = 0;
+      this.angle = 0;
       this.bats = 0;
       this.thrownAt = 0;
       this.drag = null;
@@ -1273,33 +1285,29 @@
       this.el.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         this.el.setPointerCapture(event.pointerId);
-        this.drag = { x: event.clientX, y: event.clientY, t: performance.now(), vx: 0, vy: 0 };
+        // Hold it where you grabbed it, not by its middle.
+        this.drag = { dx: this.x - event.clientX, dy: this.y - event.clientY, path: [] };
+        this.follow(event);
         this.vx = 0;
         this.vy = 0;
         cats.forEach((cat) => cat.distract());
       });
       this.el.addEventListener("pointermove", (event) => {
-        if (!this.drag) {
-          return;
-        }
-        const t = performance.now();
-        const frames = Math.max(1, t - this.drag.t) / 16;
-        this.drag.vx = (event.clientX - this.drag.x) / frames;
-        this.drag.vy = (event.clientY - this.drag.y) / frames;
-        this.drag.x = event.clientX;
-        this.drag.y = event.clientY;
-        this.drag.t = t;
-        this.x = event.clientX;
-        this.y = event.clientY;
-        this.place();
+        if (this.drag) this.follow(event);
       });
       const release = () => {
         if (!this.drag) {
           return;
         }
-        this.vx = Math.max(-30, Math.min(30, this.drag.vx));
-        this.vy = Math.max(-30, Math.min(30, this.drag.vy));
+        // Throw at the speed of the last flick, not the last jittery move.
+        const path = this.drag.path;
+        const from = path[0];
+        const to = path[path.length - 1];
+        const frames = (to.t - from.t) / FRAME;
+        // Held still before letting go: it just drops.
+        const flicked = performance.now() - to.t < 60;
         this.drag = null;
+        if (frames > 0 && flicked) this.push((to.x - from.x) / frames, (to.y - from.y) / frames);
         this.thrownAt = Date.now();
         this.bats = 0;
         this.roll();
@@ -1312,21 +1320,54 @@
       });
     }
 
+    follow(event) {
+      const t = performance.now();
+      const path = this.drag.path;
+      path.push({ x: event.clientX, y: event.clientY, t });
+      while (path.length > 2 && t - path[0].t > 100) path.shift();
+      this.x = event.clientX + this.drag.dx;
+      this.y = event.clientY + this.drag.dy;
+      this.keepInside(false);
+      this.place();
+    }
+
+    // Add speed, up to a sensible top speed.
+    push(vx, vy) {
+      this.vx += vx;
+      this.vy += vy;
+      const speed = Math.hypot(this.vx, this.vy);
+      if (speed > YARN_TOP_SPEED) {
+        this.vx *= YARN_TOP_SPEED / speed;
+        this.vy *= YARN_TOP_SPEED / speed;
+      }
+    }
+
     roll() {
       if (!this.rolling) {
         this.rolling = true;
+        this.lastTick = performance.now();
         requestAnimationFrame(() => this.tick());
       }
     }
 
+    // Speeds are in pixels per 60 Hz frame, so fast screens roll it just as far.
     tick() {
-      this.x += this.vx;
-      this.y += this.vy;
-      this.vx *= 0.96;
-      this.vy *= 0.96;
+      const now = performance.now();
+      const dt = Math.min(3, Math.max(0, now - this.lastTick) / FRAME);
+      this.lastTick = now;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.angle += (Math.hypot(this.vx, this.vy) * dt * (this.vx < 0 ? -1 : 1)) / YARN_RADIUS;
       this.keepInside(true);
+      this.bumpCats();
+      // Air slows fast throws, the floor stops slow rolls.
+      const drag = Math.pow(0.985, dt);
+      const speed = Math.hypot(this.vx, this.vy);
+      const slowed = Math.max(0, speed * drag - 0.08 * dt);
+      this.vx = speed ? (this.vx / speed) * slowed : 0;
+      this.vy = speed ? (this.vy / speed) * slowed : 0;
       this.place();
-      if (Math.hypot(this.vx, this.vy) > 0.2) {
+      if (slowed > 0) {
         requestAnimationFrame(() => this.tick());
       } else {
         this.rolling = false;
@@ -1334,23 +1375,58 @@
     }
 
     keepInside(bounce) {
-      const r = 12;
+      const r = YARN_RADIUS;
       const maxX = window.innerWidth - r;
       const maxY = window.innerHeight - r;
       if (this.x < r || this.x > maxX) {
         this.x = Math.max(r, Math.min(maxX, this.x));
-        this.vx = bounce ? -this.vx * 0.7 : 0;
+        if (bounce) this.squash(Math.abs(this.vx), "x");
+        this.vx = bounce ? -this.vx * 0.65 : 0;
+        this.vy *= bounce ? 0.9 : 1;
       }
       if (this.y < r || this.y > maxY) {
         this.y = Math.max(r, Math.min(maxY, this.y));
-        this.vy = bounce ? -this.vy * 0.7 : 0;
+        if (bounce) this.squash(Math.abs(this.vy), "y");
+        this.vy = bounce ? -this.vy * 0.65 : 0;
+        this.vx *= bounce ? 0.9 : 1;
       }
+    }
+
+    // It bounces off cats too, softer than off a wall.
+    bumpCats() {
+      for (const cat of cats) {
+        if (cat.el.hidden || cat.held) continue;
+        const dx = this.x - cat.x;
+        const dy = this.y - cat.y;
+        const distance = Math.hypot(dx, dy);
+        const reach = YARN_RADIUS + SIZE / 2 - 4;
+        if (distance === 0 || distance >= reach) continue;
+        const nx = dx / distance;
+        const ny = dy / distance;
+        this.x = cat.x + nx * reach;
+        this.y = cat.y + ny * reach;
+        const into = this.vx * nx + this.vy * ny;
+        if (into < 0) {
+          this.vx -= 1.5 * into * nx;
+          this.vy -= 1.5 * into * ny;
+          this.squash(-into, Math.abs(nx) > Math.abs(ny) ? "x" : "y");
+        }
+      }
+    }
+
+    // A hard hit flattens it for a moment.
+    squash(speed, axis) {
+      if (speed < 3) return;
+      const amount = Math.min(0.3, speed / 60);
+      this.el.style.scale = axis === "x" ? `${1 - amount} ${1 + amount}` : `${1 + amount} ${1 - amount}`;
+      clearTimeout(this.squashTimer);
+      this.squashTimer = setTimeout(() => (this.el.style.scale = ""), 90);
     }
 
     place() {
       this.el.style.left = `${this.x}px`;
       this.el.style.top = `${this.y}px`;
-      this.el.style.rotate = `${(this.x + this.y) * 2}deg`;
+      this.el.style.rotate = `${this.angle.toFixed(3)}rad`;
     }
 
     throwFrom(px, py) {
@@ -1376,8 +1452,7 @@
       this.bats += 1;
       const angle = Math.atan2(this.y - cat.y, this.x - cat.x) + between(-0.8, 0.8);
       const power = between(6, 12);
-      this.vx = Math.cos(angle) * power;
-      this.vy = Math.sin(angle) * power;
+      this.push(Math.cos(angle) * power, Math.sin(angle) * power);
       this.thrownAt = Date.now();
       this.roll();
     }
