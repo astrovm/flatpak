@@ -113,7 +113,11 @@
   let nyanUntil = 0;
   let yarn = null;
   let hat = null;
-  const home = document.querySelector("[data-oneko-home]");
+  let home = document.querySelector("[data-oneko-home]");
+  const reading = () => location.pathname.includes("/blog/") && Boolean(document.querySelector(".post:not(.on-list) .post-content"));
+  let invitedUntil = 0;
+  const quiet = () => reading() && Date.now() > invitedUntil;
+  const invite = () => { invitedUntil = Date.now() + 15000; };
   let parked = Boolean(home);
   let butterfly = null;
   const treats = [];
@@ -353,9 +357,11 @@
       this.wearHat();
       this.el.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (this.suppressClick) { this.suppressClick = false; return; }
         this.petted();
       });
       this.listenForRubs();
+      this.listenForDrag();
       document.body.appendChild(this.el);
       this.place();
       this.setSprite("idle", 0);
@@ -380,6 +386,7 @@
     }
 
     say(text) {
+      if (quiet()) return;
       const bubble = document.createElement("span");
       bubble.className = "oneko-bubble";
       bubble.textContent = text;
@@ -392,6 +399,7 @@
     }
 
     petted() {
+      invite();
       puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
       if (parked) {
         wake();
@@ -419,6 +427,52 @@
       }
     }
 
+    // Pick it up with a mouse or finger. A drag is not a pet.
+    listenForDrag() {
+      let held = null;
+      let dragged = false;
+      this.el.style.cursor = "grab";
+      this.el.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        event.stopPropagation();
+        invite();
+        held = { id: event.pointerId, x: event.clientX, y: event.clientY, dx: this.x - event.clientX, dy: this.y - event.clientY };
+        dragged = false;
+        this.held = true;
+        this.drop();
+        this.giveBack();
+        this.el.setPointerCapture(event.pointerId);
+        this.el.style.cursor = "grabbing";
+      });
+      this.el.addEventListener("pointermove", (event) => {
+        if (!held || held.id !== event.pointerId) return;
+        event.stopPropagation();
+        dragged ||= Math.hypot(event.clientX - held.x, event.clientY - held.y) > 4;
+        if (!dragged) return;
+        parked = false;
+        home?.classList.add("oneko-away");
+        this.x = Math.max(16, Math.min(window.innerWidth - 16, event.clientX + held.dx));
+        this.y = Math.max(16, Math.min(window.innerHeight - 16, event.clientY + held.dy));
+        this.place();
+        this.setSprite("alert", 0);
+      });
+      const release = (event) => {
+        if (!held || held.id !== event.pointerId) return;
+        this.suppressClick = dragged || event.type !== "pointerup";
+        held = null;
+        this.held = false;
+        this.el.style.cursor = "grab";
+        if (this.el.hasPointerCapture(event.pointerId)) this.el.releasePointerCapture(event.pointerId);
+        pointer = null;
+        // On articles it stays where you put it until the next page.
+        invitedUntil = 0;
+        this.readerSpot = dragged ? { x: this.x, y: this.y } : null;
+      };
+      this.el.addEventListener("pointerup", release);
+      this.el.addEventListener("pointercancel", release);
+      this.el.addEventListener("lostpointercapture", release);
+    }
+
     // Rubbing back and forth over the cat with the mouse makes it purr.
     listenForRubs() {
       let lastX = null;
@@ -426,7 +480,7 @@
       let flips = 0;
       let flippedAt = 0;
       this.el.addEventListener("pointermove", (event) => {
-        if (event.pointerType !== "mouse" || parked) {
+        if (event.pointerType !== "mouse" || parked || this.held) {
           return;
         }
         const dx = event.clientX - (lastX ?? event.clientX);
@@ -619,6 +673,7 @@
     }
 
     bite() {
+      if (reading()) return false;
       return this.onElement(
         "bite",
         SOLID,
@@ -631,6 +686,7 @@
     }
 
     knock() {
+      if (reading()) return false;
       return this.onElement(
         "knock",
         SOLID,
@@ -640,6 +696,7 @@
     }
 
     push() {
+      if (reading()) return false;
       const targets = visible(
         SOLID,
         (el, rect) => rect.width > 40 && rect.width < window.innerWidth * 0.8 && !el.onekoShoved,
@@ -674,6 +731,7 @@
     }
 
     steal() {
+      if (reading()) return false;
       if (this.loot) {
         return false;
       }
@@ -1040,6 +1098,18 @@
 
     frame() {
       this.frameCount += 1;
+      if (this.held) return;
+      if (quiet()) {
+        this.drop();
+        if (this.loot) this.giveBack();
+        const spot = this.readerSpot || (home ? homeSpot() : { x: window.innerWidth - 20, y: 20 });
+        this.x = Math.max(16, Math.min(window.innerWidth - 16, spot.x));
+        this.y = Math.max(16, Math.min(window.innerHeight - 16, spot.y));
+        this.place();
+        this.setSprite("idle", 0);
+        if (yarn) yarn.el.hidden = true;
+        return;
+      }
 
       // Napping in the logo until someone wakes it up.
       if (parked) {
@@ -1304,6 +1374,7 @@
 
   // A fish falls from the sky and the closest cat runs to eat it.
   function dropTreat(x = pointer ? pointer.x : between(80, window.innerWidth - 80)) {
+    invite();
     const tx = Math.max(20, Math.min(window.innerWidth - 20, x));
     const ty = between(window.innerHeight * 0.45, window.innerHeight - 60);
     const el = document.createElement("div");
@@ -1329,7 +1400,7 @@
       timer = setTimeout(() => {
         const selection = document.getSelection();
         const cat = cats[0];
-        if (parked || !selection || selection.isCollapsed || !selection.toString().trim()) {
+        if (reading() || parked || !selection || selection.isCollapsed || !selection.toString().trim()) {
           return;
         }
         if ((cat.plan && cat.plan.stubborn) || Math.random() < 0.5) {
@@ -1348,14 +1419,14 @@
   function greet() {
     const seen = memory.get("seen", 0);
     memory.set("seen", Date.now());
-    if (seen && Date.now() - seen > 6 * 60 * 60 * 1000 && !lateNight) {
+    if (!reading() && seen && Date.now() - seen > 6 * 60 * 60 * 1000 && !lateNight) {
       setTimeout(() => cats[0].say("welcome back ♡"), 2000);
     }
     let leftAt = 0;
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) {
         leftAt = Date.now();
-      } else if (leftAt && Date.now() - leftAt > 10000 && !parked) {
+      } else if (!reading() && leftAt && Date.now() - leftAt > 10000 && !parked) {
         cats.forEach((cat) => cat.say("you're back! ♡"));
       }
     });
@@ -1385,10 +1456,13 @@
   }
 
   function pspsps() {
+    invite();
+    if (parked) wake();
     cats.forEach((cat) => cat.come());
   }
 
   function startNyan() {
+    invite();
     nyanUntil = Date.now() + 8000;
     cats.forEach((cat) => {
       cat.distract();
@@ -1432,7 +1506,7 @@
     if (memory.get("pets", 0) >= 100) {
       hat = "crown";
     }
-    const start = home ? homeSpot() : touch ? { x: window.innerWidth - 40, y: window.innerHeight - 40 } : { x: 32, y: 32 };
+    const start = home ? homeSpot() : reading() ? { x: window.innerWidth - 20, y: 20 } : touch ? { x: window.innerWidth - 40, y: window.innerHeight - 40 } : { x: 32, y: 32 };
     cats.push(new Cat(start.x, start.y));
     if (home) {
       home.classList.add("oneko-home");
@@ -1447,7 +1521,7 @@
     }
 
     document.addEventListener("mousemove", (event) => {
-      if (touch) {
+      if (touch || quiet()) {
         return;
       }
       pointer = { x: event.clientX, y: event.clientY };
@@ -1460,7 +1534,7 @@
       });
     });
     document.addEventListener("pointerdown", (event) => {
-      if (event.pointerType === "mouse" || event.target.closest(".oneko-cat, .oneko-yarn")) {
+      if (quiet() || event.pointerType === "mouse" || event.target.closest(".oneko-cat, .oneko-yarn")) {
         return;
       }
       pointer = { x: event.clientX, y: event.clientY };
@@ -1477,11 +1551,11 @@
     setInterval(() => {
       cats.forEach((cat) => cat.frame());
       if (yarn) {
-        yarn.el.hidden = !roomy() && !yarn.interesting() && !yarn.rolling;
+        yarn.el.hidden = quiet() || !roomy() && !yarn.interesting() && !yarn.rolling;
       }
     }, TICK);
 
-    if (lateNight) {
+    if (lateNight && !reading()) {
       setTimeout(() => cats[0].say("*yawn*"), 3000);
     }
   }
@@ -1521,5 +1595,19 @@
     friend: addFriend,
   };
 
+  window.addEventListener("site:navigate", () => {
+    home = document.querySelector("[data-oneko-home]");
+    parked = Boolean(home);
+    pointer = null;
+    invitedUntil = 0;
+    cats.forEach((cat) => {
+      cat.drop();
+      cat.giveBack();
+      cat.readerSpot = null;
+      cat.idleTime = 0;
+      if (quiet()) cat.frame();
+    });
+    if (home) home.classList.add("oneko-home");
+  });
   main();
 })();
