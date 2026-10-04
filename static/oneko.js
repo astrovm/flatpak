@@ -5,7 +5,10 @@
 // Secrets: type "pspsps" to call it, "nyan" for a rainbow run or "fish" for a treat.
 // From the console: oneko.bite(), knock(), push(), steal(), perch(), scratch(),
 // peek(), nap(), hunt(), box(), pounce(), treat(), pspsps(), nyan(), friend(),
-// pet(), play() and hat("pumpkin").
+// pet(), play(), pass() and hat("pumpkin").
+// Other people's cats on the same page (fun.js ghost cats) get visits, boops, games of tag
+// and the yarn passed back and forth.
+// On articles it sits on the reading bar: drag it along the bar to move through the post.
 // Add ?today=2026-10-31T03:00 to the URL to pretend it is another day or time.
 // Put data-oneko-home on an element and the cat naps there until someone clicks it.
 (function oneko() {
@@ -133,6 +136,11 @@
   let parked = Boolean(home);
   let butterfly = null;
   const treats = [];
+  // Other visitors' cats, from fun.js. Each has x, y, el and meet("boop", "tag" or "pass").
+  let friends = () => [];
+  // fun.js can ask the reading cat to sit somewhere else for a while, like a saved spot.
+  let guide = null;
+  const guided = (cat) => !cat.readerSpot && guide?.();
 
   const random = (list) => list[Math.floor(Math.random() * list.length)];
   const between = (min, max) => min + Math.random() * (max - min);
@@ -398,11 +406,13 @@
 
     setSprite(name, frame) {
       const sprite = spriteSets[name][frame % spriteSets[name].length];
+      this.sprite = sprite;
       this.el.style.backgroundPosition = `${sprite[0] * SIZE}px ${sprite[1] * SIZE}px`;
     }
 
-    say(text) {
-      if (quiet() || away) return;
+    // Reading help still talks on articles (force), chatter doesn't.
+    say(text, force = false) {
+      if ((quiet() && !force) || away) return;
       const bubble = document.createElement("span");
       bubble.className = "oneko-bubble";
       bubble.textContent = text;
@@ -416,6 +426,12 @@
 
     petted() {
       if (away) return;
+      // On articles a tap asks for reading help (fun.js) instead of playing.
+      if (quiet() && !this.readerSpot) {
+        const ask = new CustomEvent("oneko:reader-tap", { cancelable: true });
+        window.dispatchEvent(ask);
+        if (ask.defaultPrevented) return;
+      }
       invite();
       puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
       if (parked) {
@@ -452,8 +468,10 @@
       this.el.addEventListener("pointerdown", (event) => {
         if (event.button !== 0) return;
         event.stopPropagation();
-        invite();
-        held = { id: event.pointerId, x: event.clientX, y: event.clientY, dx: this.x - event.clientX, dy: this.y - event.clientY };
+        // Grabbed on the reading bar, it scrubs through the post until pulled off the bar.
+        const scrub = quiet() && !this.readerSpot && Math.abs(this.y - progressSpot().y) < 8;
+        if (!scrub) invite();
+        held = { id: event.pointerId, x: event.clientX, y: event.clientY, dx: this.x - event.clientX, dy: this.y - event.clientY, scrub };
         dragged = false;
         this.swing = 0;
         this.held = true;
@@ -465,6 +483,18 @@
       this.el.addEventListener("pointermove", (event) => {
         if (!held || held.id !== event.pointerId) return;
         event.stopPropagation();
+        if (held.scrub && Math.abs(event.clientY - progressSpot().y) < 60) {
+          dragged ||= Math.abs(event.clientX - held.x) > 4;
+          if (dragged) this.scrub(event.clientX);
+          return;
+        }
+        if (held.scrub) {
+          // Pulled off the bar: now it's picked up like anywhere else.
+          held.scrub = false;
+          this.scrubbing = false;
+          dragged = false;
+          invite();
+        }
         if (!dragged && Math.hypot(event.clientX - held.x, event.clientY - held.y) > 4) {
           dragged = true;
           this.el.classList.add("oneko-held");
@@ -487,17 +517,19 @@
       const release = (event) => {
         if (!held || held.id !== event.pointerId) return;
         this.suppressClick = dragged || event.type !== "pointerup";
+        const scrubbed = held.scrub;
         held = null;
+        this.scrubbing = false;
         this.held = false;
         this.el.style.cursor = "grab";
         if (this.el.hasPointerCapture(event.pointerId)) this.el.releasePointerCapture(event.pointerId);
         pointer = null;
         // On articles it stays where you put it until the next page.
         invitedUntil = 0;
-        this.readerSpot = dragged ? { x: this.x, y: this.y } : null;
+        this.readerSpot = dragged && !scrubbed ? { x: this.x, y: this.y } : null;
         this.el.classList.remove("oneko-held");
         this.el.style.rotate = "";
-        if (dragged && !calm) this.land();
+        if (dragged && !scrubbed && !calm) this.land();
       };
       this.el.addEventListener("pointerup", release);
       this.el.addEventListener("pointercancel", release);
@@ -535,6 +567,20 @@
       this.el.addEventListener("pointerleave", () => {
         lastX = null;
       });
+    }
+
+    // Walk along the reading bar, and the page scrolls to match.
+    scrub(clientX) {
+      const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const x = Math.max(16, Math.min(window.innerWidth - 16, clientX));
+      // The inverse of progressSpot().
+      const done = x <= 16 ? 0 : x >= window.innerWidth - 16 ? 1 : (x + 12) / window.innerWidth;
+      window.scrollTo({ top: done * max, behavior: "instant" });
+      this.scrubbing = true;
+      this.setSprite(x < this.x ? "W" : "E", this.frameCount);
+      this.x = x;
+      this.y = progressSpot().y;
+      this.place();
     }
 
     // Kicks its legs and swings back to hanging straight.
@@ -658,6 +704,11 @@
       if (lateNight && Math.random() < 0.6) {
         this.idleAnimation = "sleeping";
         return;
+      }
+      // With other visitors around, it often goes to play with them.
+      if (Math.random() < 0.3) {
+        const passed = Math.random() < 0.5 ? this.passYarn() : false;
+        if (passed !== false || this.visit() !== false) return;
       }
       const options = [
         [0.17, () => this.bite()],
@@ -1013,6 +1064,98 @@
       });
     }
 
+    // Walk up to another visitor's cat and boop its nose. Sometimes it's a game of tag.
+    visit(friend = random(friends())) {
+      if (!friend || reading()) {
+        return false;
+      }
+      const side = this.x < friend.x ? -1 : 1;
+      const tag = Math.random() < 0.35;
+      return this.start({
+        kind: "visit",
+        el: friend.el,
+        frames: 12,
+        speed: 12,
+        where: () => ({ sx: friend.x + side * 26, sy: friend.y }),
+        act: (frame) => {
+          this.setSprite(side < 0 ? "E" : "W", 0);
+          if (frame === 4) {
+            friend.meet(tag ? "tag" : "boop");
+            puff("♡", "oneko-heart", this.x - side * 13, this.y - SIZE / 2);
+            this.say(tag ? "tag! you're it" : random(["boop", "hi friend", "mrrp ♡"]));
+          }
+        },
+        then: () => tag && this.flee(friend),
+      });
+    }
+
+    // Walk around the yarn and kick it over to another visitor's cat.
+    passYarn(friend = random(friends())) {
+      if (!friend || !yarn || yarn.gone || yarn.drag || reading()) {
+        return false;
+      }
+      return this.start({
+        kind: "pass",
+        el: friend.el,
+        stubborn: true,
+        frames: 3,
+        speed: 12,
+        // Behind the yarn, so the kick sends it the right way.
+        where: () => {
+          const angle = Math.atan2(friend.y - yarn.y, friend.x - yarn.x);
+          return { sx: yarn.x - Math.cos(angle) * 26, sy: yarn.y - Math.sin(angle) * 26 };
+        },
+        act: (frame) => {
+          this.setSprite("scratchSelf", frame);
+          if (frame === 2) yarn.kick(friend);
+        },
+      });
+    }
+
+    // Tagged it, so run.
+    flee(friend) {
+      const dir = this.x < friend.x ? -1 : 1;
+      const spot = {
+        sx: Math.max(40, Math.min(window.innerWidth - 40, this.x + dir * between(150, 300))),
+        sy: between(60, window.innerHeight - 40),
+      };
+      return this.start({
+        kind: "flee",
+        frames: 1,
+        speed: 18,
+        where: () => spot,
+        act: () => {},
+      });
+    }
+
+    // Another cat came over to say hi.
+    booped(friend) {
+      puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
+      if (quiet() || parked || this.held || this.plan?.stubborn) {
+        return;
+      }
+      this.say(random(["mrrp? ♡", "hi!", "=^.^="]));
+      const side = this.x < friend.x ? "E" : "W";
+      this.start({ kind: "greet", frames: 8, where: () => ({ sx: this.x, sy: this.y }), act: () => this.setSprite(side, 0) });
+    }
+
+    // Another cat tagged it: chase that cat for a bit.
+    tagged(friend) {
+      if (quiet() || parked || this.held || this.plan?.stubborn) {
+        return;
+      }
+      this.say("!");
+      this.chase(() => (friend.el.isConnected ? friend : null), 4000);
+    }
+
+    // Someone new showed up. Sometimes it goes over right away.
+    noticed(friend) {
+      if (!quiet() && !parked && !this.held && !this.plan && Math.random() < 0.5) {
+        this.say("!");
+        this.visit(friend);
+      }
+    }
+
     // Wiggle, then leap at the cursor.
     pounce() {
       return this.start({
@@ -1164,13 +1307,13 @@
       this.el.hidden = Boolean(reading() && this.leader);
       if (this.el.hidden) return;
       if (this.held) {
-        if (!calm) this.dangle();
+        if (!calm && !this.scrubbing) this.dangle();
         return;
       }
       if (quiet()) {
         this.drop();
         if (this.loot) this.giveBack();
-        const spot = this.readerSpot || progressSpot();
+        const spot = this.readerSpot || guided(this) || progressSpot();
         const x = Math.max(16, Math.min(window.innerWidth - 16, spot.x));
         const y = Math.max(16, Math.min(window.innerHeight - 16, spot.y));
         // Far from its spot (a new article, a big jump): it runs there, quietly.
@@ -1183,7 +1326,7 @@
         this.y = y;
         this.place();
         const max = document.documentElement.scrollHeight - window.innerHeight;
-        const name = this.readerSpot || calm ? "idle" : window.scrollY >= max - 4 ? "sleeping" : Date.now() - readingScrollAt < 300 ? "E" : "idle";
+        const name = this.readerSpot || calm || guided(this) ? "idle" : window.scrollY >= max - 4 ? "sleeping" : Date.now() - readingScrollAt < 300 ? "E" : "idle";
         this.setSprite(name, name === "sleeping" ? Math.floor(this.frameCount / 4) : this.frameCount);
         if (yarn) yarn.el.hidden = true;
         return;
@@ -1280,6 +1423,9 @@
       this.thrownAt = 0;
       this.drag = null;
       this.rolling = false;
+      // Rolling over to another visitor's cat, or over on their screen right now.
+      this.passTo = null;
+      this.gone = false;
       this.el = document.createElement("div");
       this.el.className = "oneko-yarn";
       this.el.setAttribute("aria-hidden", "true");
@@ -1291,6 +1437,7 @@
         this.el.setPointerCapture(event.pointerId);
         // Hold it where you grabbed it, not by its middle.
         this.drag = { dx: this.x - event.clientX, dy: this.y - event.clientY, path: [] };
+        this.passTo = null;
         this.follow(event);
         this.vx = 0;
         this.vy = 0;
@@ -1359,11 +1506,19 @@
       const now = performance.now();
       const dt = Math.min(3, Math.max(0, now - this.lastTick) / FRAME);
       this.lastTick = now;
+      // Keep a pass headed toward a cat that is still walking.
+      if (this.passTo?.el.isConnected) {
+        const angle = Math.atan2(this.passTo.y - this.y, this.passTo.x - this.x);
+        const speed = Math.max(8, Math.hypot(this.vx, this.vy));
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+      }
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       this.angle += (Math.hypot(this.vx, this.vy) * dt * (this.vx < 0 ? -1 : 1)) / YARN_RADIUS;
       this.keepInside(true);
       this.bumpCats();
+      if (this.reached()) return;
       // Air slows fast throws, the floor stops slow rolls.
       const drag = Math.pow(0.985, dt);
       const speed = Math.hypot(this.vx, this.vy);
@@ -1394,6 +1549,58 @@
         this.vy = bounce ? -this.vy * 0.65 : 0;
         this.vx *= bounce ? 0.9 : 1;
       }
+    }
+
+    // Passed to another visitor's cat: once it gets there, off it goes to their screen.
+    reached() {
+      const friend = this.passTo;
+      if (!friend) return false;
+      if (!friend.el.isConnected) {
+        this.passTo = null;
+        return false;
+      }
+      if (Math.hypot(friend.x - this.x, friend.y - this.y) > 24) return false;
+      friend.meet("pass");
+      this.passTo = null;
+      this.vx = 0;
+      this.vy = 0;
+      this.rolling = false;
+      this.gone = true;
+      // If they never send it back, it turns up again anyway.
+      clearTimeout(this.goneTimer);
+      this.goneTimer = setTimeout(() => this.receive({ x: this.x, y: this.y }), 20000);
+      return true;
+    }
+
+    // Back from another visitor: it rolls out of their cat toward ours.
+    receive(from) {
+      clearTimeout(this.goneTimer);
+      this.gone = false;
+      this.passTo = null;
+      this.x = from.x;
+      this.y = from.y;
+      this.keepInside(false);
+      const cat = cats[0];
+      const angle = Math.atan2(cat.y - this.y, cat.x - this.x);
+      this.vx = 0;
+      this.vy = 0;
+      this.push(Math.cos(angle) * 12, Math.sin(angle) * 12);
+      this.thrownAt = Date.now();
+      this.bats = 0;
+      this.place();
+      this.roll();
+    }
+
+    // Send it rolling at another visitor's cat, hard enough to get there.
+    kick(friend) {
+      const angle = Math.atan2(friend.y - this.y, friend.x - this.x);
+      const power = Math.min(YARN_TOP_SPEED, 10 + Math.hypot(friend.x - this.x, friend.y - this.y) / 20);
+      this.vx = 0;
+      this.vy = 0;
+      this.push(Math.cos(angle) * power, Math.sin(angle) * power);
+      this.passTo = friend;
+      this.thrownAt = Date.now();
+      this.roll();
     }
 
     // It bounces off cats too, softer than off a wall.
@@ -1434,6 +1641,9 @@
     }
 
     throwFrom(px, py) {
+      clearTimeout(this.goneTimer);
+      this.gone = false;
+      this.passTo = null;
       this.x = px;
       this.y = py;
       const angle = between(0, Math.PI * 2);
@@ -1446,7 +1656,7 @@
 
     // Cats care for a few seconds after a throw, and bat it around a few times.
     interesting() {
-      return !this.drag && Date.now() - this.thrownAt < 6000 && this.bats < 4;
+      return !this.gone && !this.passTo && !this.drag && Date.now() - this.thrownAt < 6000 && this.bats < 4;
     }
 
     bat(cat) {
@@ -1454,6 +1664,12 @@
         return;
       }
       this.bats += 1;
+      // With another visitor's cat around, it sometimes passes instead.
+      const friend = !cat.leader && Math.random() < 0.5 ? random(friends()) : null;
+      if (friend) {
+        this.kick(friend);
+        return;
+      }
       const angle = Math.atan2(this.y - cat.y, this.x - cat.x) + between(-0.8, 0.8);
       const power = between(6, 12);
       this.push(Math.cos(angle) * power, Math.sin(angle) * power);
@@ -1679,7 +1895,7 @@
       lastPointerAt = Date.now();
       // Mouse moves happen all the time, so only quick jobs get interrupted.
       cats.forEach((cat) => {
-        if (cat.plan && ["nap", "peek", "wander"].includes(cat.plan.kind)) {
+        if (cat.plan && ["nap", "peek", "wander", "visit"].includes(cat.plan.kind)) {
           cat.distract();
         }
       });
@@ -1702,7 +1918,7 @@
     setInterval(() => {
       cats.forEach((cat) => cat.frame());
       if (yarn) {
-        yarn.el.hidden = away || quiet() || !roomy() && !yarn.drag && !yarn.interesting() && !yarn.rolling;
+        yarn.el.hidden = away || yarn.gone || quiet() || !roomy() && !yarn.drag && !yarn.interesting() && !yarn.rolling;
       }
     }, TICK);
 
@@ -1751,11 +1967,35 @@
     hunt: () => first().hunt(),
     box: () => first().box(),
     pounce: () => first().pounce(),
+    pass: () => first().passYarn(),
     treat: dropTreat,
     pets: () => memory.get("pets", 0),
     pspsps,
     nyan: startNyan,
     friend: addFriend,
+    // For fun.js ghost cats: what this cat looks like to others, and how it reacts to theirs.
+    me: () => {
+      const cat = first();
+      if (!cat) return null;
+      return { x: cat.x, y: cat.y, sprite: cat.sprite, reading: quiet() && !cat.readerSpot && !guided(cat), hidden: away || cat.el.hidden };
+    },
+    friends: (list) => { friends = list || (() => []); },
+    // Another visitor's cat passed the yarn over.
+    passed: (friend) => {
+      if (calm || away || quiet() || !first()) return;
+      addYarn();
+      yarn.receive(friend);
+    },
+    // For fun.js reading help: a bubble that shows on articles too, and a spot to sit at.
+    note: (text) => first()?.say(text, true),
+    guide: (spot) => {
+      guide = spot || null;
+      if (calm && quiet()) first()?.frame();
+    },
+    visit: (friend) => first()?.visit(friend),
+    booped: (friend) => first()?.booped(friend),
+    tagged: (friend) => first()?.tagged(friend),
+    noticed: (friend) => first()?.noticed(friend),
   };
 
   window.addEventListener("site:navigate", () => {
