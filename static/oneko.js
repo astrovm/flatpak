@@ -186,6 +186,9 @@
       .oneko-cat { position: fixed; z-index: 2147483647; width: ${SIZE}px; height: ${SIZE}px;
         background-image: url("/oneko.gif"); image-rendering: pixelated; touch-action: manipulation; }
       .oneko-bitten { animation: oneko-shake 300ms ease; }
+      .oneko-held { transform-origin: 50% 10%; transition: rotate 100ms linear; }
+      .oneko-landed { transform-origin: 50% 100%; animation: oneko-squash 280ms ease-out; }
+      @keyframes oneko-squash { 35% { scale: 1.2 0.75; } 70% { scale: 0.92 1.08; } }
       @keyframes oneko-shake { 25% { translate: -2px 0; } 75% { translate: 2px 0; } }
       .oneko-bit, .oneko-bubble, .oneko-loot { position: fixed; z-index: 2147483646;
         pointer-events: none; font: 700 13px/1.2 monospace; white-space: nowrap; }
@@ -356,6 +359,7 @@
       this.loot = null;
       this.clicks = 0;
       this.purrUntil = 0;
+      this.swing = 0;
       this.el = document.createElement("div");
       this.el.className = "oneko-cat";
       this.el.setAttribute("aria-hidden", "true");
@@ -445,6 +449,7 @@
         invite();
         held = { id: event.pointerId, x: event.clientX, y: event.clientY, dx: this.x - event.clientX, dy: this.y - event.clientY };
         dragged = false;
+        this.swing = 0;
         this.held = true;
         this.drop();
         this.giveBack();
@@ -454,14 +459,24 @@
       this.el.addEventListener("pointermove", (event) => {
         if (!held || held.id !== event.pointerId) return;
         event.stopPropagation();
-        dragged ||= Math.hypot(event.clientX - held.x, event.clientY - held.y) > 4;
+        if (!dragged && Math.hypot(event.clientX - held.x, event.clientY - held.y) > 4) {
+          dragged = true;
+          this.el.classList.add("oneko-held");
+          this.say(random(["!", "mrrp?!", "nya?!"]));
+        }
         if (!dragged) return;
         parked = false;
         home?.classList.add("oneko-away");
-        this.x = Math.max(16, Math.min(window.innerWidth - 16, event.clientX + held.dx));
+        // Hanging by the scruff, it swings against the way you move it.
+        const x = Math.max(16, Math.min(window.innerWidth - 16, event.clientX + held.dx));
+        if (!calm) {
+          this.swing = Math.max(-35, Math.min(35, this.swing - (x - this.x) * 1.5));
+          this.el.style.rotate = `${this.swing.toFixed(1)}deg`;
+        }
+        this.x = x;
         this.y = Math.max(16, Math.min(window.innerHeight - 16, event.clientY + held.dy));
         this.place();
-        this.setSprite("alert", 0);
+        if (calm) this.setSprite("alert", 0);
       });
       const release = (event) => {
         if (!held || held.id !== event.pointerId) return;
@@ -474,6 +489,9 @@
         // On articles it stays where you put it until the next page.
         invitedUntil = 0;
         this.readerSpot = dragged ? { x: this.x, y: this.y } : null;
+        this.el.classList.remove("oneko-held");
+        this.el.style.rotate = "";
+        if (dragged && !calm) this.land();
       };
       this.el.addEventListener("pointerup", release);
       this.el.addEventListener("pointercancel", release);
@@ -511,6 +529,37 @@
       this.el.addEventListener("pointerleave", () => {
         lastX = null;
       });
+    }
+
+    // Kicks its legs and swings back to hanging straight.
+    dangle() {
+      this.swing *= 0.75;
+      this.el.style.rotate = `${this.swing.toFixed(1)}deg`;
+      this.setSprite(Math.abs(this.swing) > 8 ? "alert" : "S", Math.floor(this.frameCount / 2));
+    }
+
+    // Back on its feet: a little squash, then it fixes its fur.
+    land() {
+      this.el.classList.add("oneko-landed");
+      setTimeout(() => this.el.classList.remove("oneko-landed"), 300);
+      // Let it finish grooming, even on an article.
+      invitedUntil = Date.now() + 2500;
+      if (Math.random() < 0.5) this.say(random(["hmph", "(=｀ェ´=)", "again!"]));
+      this.start({
+        kind: "groom",
+        frames: 18,
+        where: () => ({ sx: this.x, sy: this.y }),
+        act: (frame) => this.setSprite("scratchSelf", frame),
+      });
+    }
+
+    // Held yarn: it walks under it and paws at it.
+    watchYarn() {
+      if (!this.step(yarn.x, yarn.y + 20, 12, 14)) return;
+      const dx = yarn.x - this.x;
+      const dy = yarn.y - this.y;
+      const side = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "E" : "W") : dy > 0 ? "S" : "N";
+      this.setSprite(`scratchWall${side}`, this.frameCount);
     }
 
     purr() {
@@ -1107,7 +1156,10 @@
       this.frameCount += 1;
       this.el.hidden = Boolean(reading() && this.leader);
       if (this.el.hidden) return;
-      if (this.held) return;
+      if (this.held) {
+        if (!calm) this.dangle();
+        return;
+      }
       if (quiet()) {
         this.drop();
         if (this.loot) this.giveBack();
@@ -1156,6 +1208,11 @@
           treats.splice(treats.indexOf(treat), 1);
           this.eat(treat);
         }
+        return;
+      }
+
+      if (yarn && yarn.drag && !this.leader) {
+        this.watchYarn();
         return;
       }
 
@@ -1219,6 +1276,7 @@
         this.drag = { x: event.clientX, y: event.clientY, t: performance.now(), vx: 0, vy: 0 };
         this.vx = 0;
         this.vy = 0;
+        cats.forEach((cat) => cat.distract());
       });
       this.el.addEventListener("pointermove", (event) => {
         if (!this.drag) {
@@ -1565,7 +1623,7 @@
     setInterval(() => {
       cats.forEach((cat) => cat.frame());
       if (yarn) {
-        yarn.el.hidden = quiet() || !roomy() && !yarn.interesting() && !yarn.rolling;
+        yarn.el.hidden = quiet() || !roomy() && !yarn.drag && !yarn.interesting() && !yarn.rolling;
       }
     }, TICK);
 
