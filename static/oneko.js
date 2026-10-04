@@ -115,6 +115,13 @@
   let hat = null;
   let home = document.querySelector("[data-oneko-home]");
   const reading = () => location.pathname.includes("/blog/") && Boolean(document.querySelector(".post:not(.on-list) .post-content"));
+  let readingScrollAt = 0;
+  window.addEventListener("scroll", () => { readingScrollAt = Date.now(); }, { passive: true });
+  const progressSpot = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const done = max > 0 ? Math.min(1, window.scrollY / max) : 1;
+    return { x: Math.max(16, Math.min(window.innerWidth - 16, done * window.innerWidth - 12)), y: 19 };
+  };
   let invitedUntil = 0;
   const quiet = () => reading() && Date.now() > invitedUntil;
   const invite = () => { invitedUntil = Date.now() + 15000; };
@@ -1098,15 +1105,19 @@
 
     frame() {
       this.frameCount += 1;
+      this.el.hidden = Boolean(reading() && this.leader);
+      if (this.el.hidden) return;
       if (this.held) return;
       if (quiet()) {
         this.drop();
         if (this.loot) this.giveBack();
-        const spot = this.readerSpot || (home ? homeSpot() : { x: window.innerWidth - 20, y: 20 });
+        const spot = this.readerSpot || progressSpot();
         this.x = Math.max(16, Math.min(window.innerWidth - 16, spot.x));
         this.y = Math.max(16, Math.min(window.innerHeight - 16, spot.y));
         this.place();
-        this.setSprite("idle", 0);
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const name = this.readerSpot || calm ? "idle" : window.scrollY >= max - 4 ? "sleeping" : Date.now() - readingScrollAt < 300 ? "E" : "idle";
+        this.setSprite(name, name === "sleeping" ? Math.floor(this.frameCount / 4) : this.frameCount);
         if (yarn) yarn.el.hidden = true;
         return;
       }
@@ -1506,13 +1517,16 @@
     if (memory.get("pets", 0) >= 100) {
       hat = "crown";
     }
-    const start = home ? homeSpot() : reading() ? { x: window.innerWidth - 20, y: 20 } : touch ? { x: window.innerWidth - 40, y: window.innerHeight - 40 } : { x: 32, y: 32 };
+    const start = home ? homeSpot() : reading() ? progressSpot() : touch ? { x: window.innerWidth - 40, y: window.innerHeight - 40 } : { x: 32, y: 32 };
     cats.push(new Cat(start.x, start.y));
     if (home) {
       home.classList.add("oneko-home");
     }
 
     if (calm) {
+      const update = () => { if (quiet()) cats.forEach((cat) => cat.frame()); };
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
       return;
     }
 
