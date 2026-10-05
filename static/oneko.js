@@ -213,9 +213,7 @@
         background: #211f2b; color: #eceae5; animation: oneko-pop 2200ms ease forwards; }
       @keyframes oneko-pop { 0% { scale: 0.6; opacity: 0; } 10%, 85% { scale: 1; opacity: 1; } 100% { opacity: 0; } }
       .oneko-loot { translate: -50% 0; padding: 0 3px; background: ${PINK}; color: #211f2b; }
-      .oneko-print, .oneko-rainbow, .oneko-claws { position: absolute; z-index: 2147483645; pointer-events: none; }
-      .oneko-print { width: 10px; height: 10px; opacity: 0.45; animation: oneko-fade 4s linear forwards;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23f462c6'%3E%3Cellipse cx='10' cy='13' rx='5' ry='4.5'/%3E%3Ccircle cx='4' cy='7' r='2.2'/%3E%3Ccircle cx='8' cy='4' r='2.2'/%3E%3Ccircle cx='12' cy='4' r='2.2'/%3E%3Ccircle cx='16' cy='7' r='2.2'/%3E%3C/svg%3E") center / contain no-repeat; }
+      .oneko-rainbow, .oneko-claws { position: absolute; z-index: 2147483645; pointer-events: none; }
       .oneko-rainbow { width: 14px; height: 18px; animation: oneko-fade 1200ms linear forwards;
         background: linear-gradient(#ff3b3b 0 17%, #ff9f1a 0 33%, #ffe14d 0 50%, #4cd964 0 67%, #3ba7ff 0 83%, #a45bff 0); }
       .oneko-claws { width: 22px; height: 26px; animation: oneko-fade 12s ease-in forwards;
@@ -626,7 +624,7 @@
     }
 
     // Walk one step toward (tx, ty). Returns true once there.
-    step(tx, ty, closeEnough, speed = SPEED, prints = true) {
+    step(tx, ty, closeEnough, speed = SPEED, leavesTrail = true) {
       const dx = this.x - tx;
       const dy = this.y - ty;
       const distance = Math.hypot(dx, dy);
@@ -647,7 +645,7 @@
       this.x -= (dx / distance) * move;
       this.y -= (dy / distance) * move;
       this.place();
-      if (prints) this.trail(Math.atan2(-dy, -dx));
+      if (leavesTrail) this.trail(Math.atan2(-dy, -dx));
       return false;
     }
 
@@ -655,9 +653,6 @@
       const degrees = (angle * 180) / Math.PI;
       if (Date.now() < nyanUntil) {
         mark("oneko-rainbow", this.x - 7, this.y - 9, degrees, 1200);
-      } else if (this.frameCount % 3 === 0) {
-        const side = this.frameCount % 6 === 0 ? 4 : -4;
-        mark("oneko-print", this.x - 5 + side, this.y + 6, degrees + 90);
       }
     }
 
