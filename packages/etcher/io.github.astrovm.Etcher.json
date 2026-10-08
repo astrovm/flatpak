@@ -39,7 +39,7 @@
         "chmod +x /app/etcher/balena-etcher /app/etcher/resources/etcher-util",
         "install -Dm755 etcher-pkexec.sh /app/bin/pkexec",
         "install -Dm755 etcher-host-writer.sh /app/libexec/etcher-host-writer",
-        "python3 -c \"from pathlib import Path; p=Path('/app/etcher/resources/app.asar'); b=p.read_bytes(); old=b'/usr/bin/pkexec'; new=b'/app/bin/pkexec'; assert len(old)==len(new) and b.count(old)==1, 'Unexpected Etcher elevation code'; p.write_bytes(b.replace(old,new))\""
+        "python3 -c \"from pathlib import Path; import hashlib; p=Path('/app/etcher/resources/app.asar'); b=p.read_bytes(); old=b'/usr/bin/pkexec'; new=b'/app/bin/pkexec'; assert len(old)==len(new) and b.count(old)==1, 'Unexpected Etcher elevation code'; anchor=b.index(b'const n=[\\\"/usr/bin/kdesudo\\\",\\\"/usr/bin/pkexec\\\"]'); start=b.rfind(b't.sudo=async function(e){',0,anchor); end=b.index(b'}))}}',anchor)+5; assert start>=0 and hashlib.sha256(b[start:end]).hexdigest()=='bbeea4ec8ed22bdb6aadb9299b8f8e2fcae0e112ac9db03f6998d66b29074fe6', 'Etcher elevation contract changed; review the host bridge before publishing'; p.write_bytes(b.replace(old,new))\""
       ],
       "sources": [
         {

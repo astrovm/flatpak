@@ -37,6 +37,7 @@ find "$site_directory" \
   -maxdepth 1 \
   ! -name .git \
   ! -name repo \
+  ! -name usb-tools \
   -exec rm -rf -- {} +
 
 "$script_directory/render-site.sh" "$public_key_file" "$site_directory"

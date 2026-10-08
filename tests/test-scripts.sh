@@ -282,6 +282,8 @@ seed_site()
     refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
   } > "$site/repo/refs-list"
   mkdir -p "$site/.git"
+  mkdir -p "$site/usb-tools/packages"
+  printf '{"etcher":{"version":"2.1.7"}}\n' > "$site/usb-tools/packages/releases.json"
   printf 'stale\n' > "$site/stale.html"
 }
 
@@ -300,6 +302,7 @@ if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ] ||
   [ -e "$site/stale.html" ] || [ ! -d "$site/.git" ] ||
   [ "$(cat "$site/CNAME")" != "flatpak.4st.li" ] ||
   [ ! -f "$site/.nojekyll" ] ||
+  ! grep -Fq '2.1.7' "$site/usb-tools/packages/releases.json" ||
   ! grep -Fxq "public key for $FLATPAK_GPG_KEY_ID" "$site/astrovm.gpg"; then
   fail "published site content is incorrect"
 fi
@@ -329,6 +332,7 @@ if [ -e "$refreshed_site/stale.html" ] ||
   [ ! -s "$refreshed_site/index.html" ] ||
   [ ! -d "$refreshed_site/.git" ] ||
   [ "$(cat "$refreshed_site/CNAME")" != "flatpak.4st.li" ] ||
+  ! cmp -s "$site/usb-tools/packages/releases.json" "$refreshed_site/usb-tools/packages/releases.json" ||
   ! cmp -s "$temporary_directory/refs-before" "$refreshed_site/repo/refs-list" ||
   ! cmp -s "$temporary_directory/key-before" "$refreshed_site/astrovm.gpg"; then
   fail "refreshing changed the repository or left the old website behind"

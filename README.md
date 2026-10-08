@@ -57,9 +57,11 @@ configured architecture in an immutable GitHub release, then sends a
 ```
 
 Etcher and Ventoy use the separate **Build USB tools** workflow because their
-upstream releases do not contain Flatpak bundles. Its manual **publish** option
-builds both pinned releases, imports them with the existing signing key, and
-verifies the complete repository before updating `gh-pages`.
+upstream releases do not contain Flatpak bundles. It checks for stable releases
+daily at 09:43 UTC, builds changed releases, and publishes them automatically
+with the existing signing key after validation. Relevant changes merged to
+`main` also rebuild and publish. Exact recipes and checksums are saved under
+`usb-tools/` on the published site. See [the update details](packages/README.md).
 
 The publishing workflow:
 
