@@ -28,13 +28,17 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish both tools to the signed Flatpak repository
+        description: Publish changed tools to the signed Flatpak repository
         type: boolean
         default: false
       update:
         description: Resolve the latest stable upstream releases before building
         type: boolean
         default: true
+      rebuild:
+        description: Rebuild unchanged packages too
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -44,13 +48,14 @@ jobs:
     runs-on: ubuntu-26.04
     outputs:
       matrix: ${{ steps.releases.outputs.matrix }}
-      build: ${{ github.event_name != 'schedule' || steps.releases.outputs.changed == 'true' }}
+      build: ${{ steps.releases.outputs.changed }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Resolve release recipes
         id: releases
         env:
           GH_TOKEN: ${{ github.token }}
+          REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild }}
           RESOLVE_LATEST: ${{ github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.update) }}
         run: |
           mode=pinned
@@ -59,9 +64,11 @@ jobs:
             git fetch origin gh-pages:refs/remotes/origin/gh-pages
             if git cat-file -e origin/gh-pages:usb-tools/packages/releases.json 2>/dev/null; then
               git show origin/gh-pages:usb-tools/packages/releases.json > "$RUNNER_TEMP/previous-releases.json"
+              mkdir -p "$RUNNER_TEMP/previous-recipes"
+              git archive origin/gh-pages usb-tools | tar -x --strip-components=1 -C "$RUNNER_TEMP/previous-recipes"
             fi
           fi
-          scripts/update-packages.sh . "$mode" "$GITHUB_OUTPUT" "$RUNNER_TEMP/previous-releases.json"
+          scripts/update-packages.sh . "$mode" "$GITHUB_OUTPUT" "$RUNNER_TEMP/previous-releases.json" "$RUNNER_TEMP/previous-recipes" "$REBUILD"
       - name: Validate generated recipes and bridges
         run: |
           sudo apt-get update
@@ -124,7 +131,7 @@ jobs:
 
   publish:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish))
-    needs: build
+    needs: [prepare, build]
     runs-on: ubuntu-26.04
     environment: flatpak-signing
     permissions:
@@ -159,6 +166,7 @@ jobs:
       - name: Sign, import and verify packages
         env:
           FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          BUILD_MATRIX: ${{ needs.prepare.outputs.matrix }}
           FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
         run: |
           set -euo pipefail
@@ -174,7 +182,7 @@ jobs:
           validate_app_registry
           restore_repository_directories site/repo
           ostree fsck --quiet --repo=site/repo
-          test "$(find bundles -type f -name '*.flatpak' | wc -l)" -eq 3
+          verify_package_artifacts bundles "$BUILD_MATRIX"
           for artifact in bundles/*; do
             (cd "$artifact" && sha256sum --check SHA256SUMS)
             for bundle in "$artifact"/*.flatpak; do

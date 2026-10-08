@@ -26,7 +26,8 @@ updater=$root/scripts/update-packages.sh
 source "$root/scripts/lib/package-versions.sh"
 reset_source()
 {
-  rm -rf "$source_root/packages"
+  rm -rf "$source_root/packages" "$source_root/scripts"
+  cp -a "$root/scripts" "$source_root/scripts"
   cp -a "$root/packages" "$source_root/packages"
   rm -f "$work/output"
 }
@@ -70,6 +71,39 @@ rm "$work/output"
 bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json"
 grep -Fxq changed=false "$work/output"
 
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include == []' >/dev/null
+rm "$work/output"
+bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json" "" true
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 3' >/dev/null
+printf 'wrong json\n' > "$work/invalid.json"
+mkdir -p "$work/bad/packages/etcher"
+cp "$work/invalid.json" "$work/bad/packages/etcher/io.github.astrovm.Etcher.json"
+expect_failure package_recipe_digest "$work/bad" etcher io.github.astrovm.Etcher
+# A launcher or metadata change must build only its owning package.
+for input in scripts/etcher-launch.sh packages/etcher/io.github.astrovm.Etcher.metainfo.xml; do
+  reset_source
+  printf '\n# changed input\n' >> "$source_root/$input"
+  bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json"
+  sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 1 and .[0].package == "etcher"' >/dev/null
+done
+reset_source
+printf '\n# changed input\n' >> "$source_root/scripts/ventoy-launch.sh"
+bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 2 and all(.[]; .package == "ventoy")' >/dev/null
+# Migrate the published snapshot without a redundant Ventoy update.
+jq 'map_values(del(.recipe_sha256))' "$work/previous.json" > "$work/legacy.json"
+reset_source
+bash "$updater" "$source_root" pinned "$work/output" "$work/legacy.json" "$root"
+grep -Fxq changed=false "$work/output"
+reset_source
+bash "$updater" "$source_root" pinned "$work/output" "$work/legacy.json"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 3' >/dev/null
+# Missing build inputs fail before either package is updated.
+reset_source
+rm "$source_root/scripts/ventoy-launch.sh"
+expect_failure bash "$updater" "$source_root" pinned "$work/output"
+assert_unchanged
+
 reset_source
 fixtures
 bash "$updater" "$source_root" latest "$work/output" "$work/previous.json"
@@ -88,6 +122,7 @@ mv "$work/changed.json" "$work/ventoy.json"
 rm "$work/output"
 bash "$updater" "$source_root" latest "$work/output" "$work/previous.json"
 grep -Fxq changed=true "$work/output"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 2 and all(.[]; .package == "ventoy")' >/dev/null
 
 # A failed second release resolution must not leave a partially updated first app.
 for mutation in \
@@ -132,6 +167,25 @@ sed -i 's/99\.0\.1/0.0.1/g' "$work/etcher.json"
 expect_failure bash "$updater" "$source_root" latest "$work/output"
 grep -q 'Refusing to downgrade' "$work/error"
 assert_unchanged
+
+
+# Partial publication accepts one Etcher artifact and rejects incomplete,
+# extra, corrupt or duplicate bundles before signing any repository changes.
+mkdir -p "$work/bundles/etcher-x86_64"
+printf 'bundle\n' > "$work/bundles/etcher-x86_64/test.flatpak"
+(cd "$work/bundles/etcher-x86_64" && sha256sum test.flatpak > SHA256SUMS)
+matrix='{"include":[{"package":"etcher","arch":"x86_64"}]}'
+verify_package_artifacts "$work/bundles" "$matrix"
+expect_failure verify_package_artifacts "$work/bundles" 'wrong'
+expect_failure verify_package_artifacts "$work/bundles" '{"include":[]}'
+expect_failure verify_package_artifacts "$work/bundles" '{"include":[{"package":"ventoy","arch":"aarch64"}]}'
+printf 'extra\n' > "$work/bundles/etcher-x86_64/duplicate.flatpak"
+expect_failure verify_package_artifacts "$work/bundles" "$matrix"
+rm "$work/bundles/etcher-x86_64/duplicate.flatpak"
+printf 'corrupt\n' >> "$work/bundles/etcher-x86_64/test.flatpak"
+expect_failure verify_package_artifacts "$work/bundles" "$matrix"
+rm "$work/bundles/etcher-x86_64/test.flatpak"
+expect_failure verify_package_artifacts "$work/bundles" "$matrix"
 
 # Execute the actual manifest patch against the reviewed upstream function.
 python3 - "$root" "$work" <<'PY'

@@ -101,7 +101,7 @@ provide libraries to processes that run on the host.
 
 ## CI and publication
 
-**Build USB tools** builds each package on its native architecture for relevant
+**Build USB tools** builds changed packages on its native architecture for relevant
 pull requests. The built Etcher helper is also tested with synthetic raw and gzip
 images, truncated gzip data, and a missing file, without opening block devices.
 Download its `.flatpak` artifacts and `SHA256SUMS` to test locally.
@@ -120,18 +120,20 @@ API failures, and downgrades stop the run and leave the published repository as 
 was. Unchanged daily checks skip the native builds and publication.
 
 Changed releases pass the script tests, 100% coverage gate, metadata validation,
-and all three native builds before publication. Etcher's reviewed Linux elevation
+and the selected native builds before publication. A digest of each manifest
+and its local sources selects packages independently: changing Etcher leaves
+Ventoy’s Flatpak commit unchanged. Existing refs are kept during partial publication. Etcher's reviewed Linux elevation
 function must still match its compatibility checksum. A changed contract needs a
 maintainer to review and adapt the host bridge before automatic updates resume.
 
 Generated checksum-pinned recipes and launchers are uploaded as the
 `usb-tool-recipes` workflow artifact and saved under `usb-tools/` in `gh-pages`.
 The published `usb-tools/packages/releases.json` records the versions and source
-checksums used. Website refreshes and publication of other apps preserve this
+checksums and recipe digests used. Website refreshes and publication of other apps preserve this
 snapshot. Recipes checked into `main` remain the baseline for PR and local builds;
 automatic runs resolve the latest upstream release into their own build snapshot.
 
-To test the latest releases without publishing:
+To check for changes and test the latest releases without publishing:
 
 ```sh
 gh workflow run packages.yml --repo astrovm/flatpak
@@ -140,7 +142,7 @@ gh workflow run packages.yml --repo astrovm/flatpak
 To force a rebuild and publication of the latest releases:
 
 ```sh
-gh workflow run packages.yml --repo astrovm/flatpak --ref main --field publish=true
+gh workflow run packages.yml --repo astrovm/flatpak --ref main --field publish=true --field rebuild=true
 ```
 
 Publication uses the existing `flatpak-signing` environment and its two GPG
