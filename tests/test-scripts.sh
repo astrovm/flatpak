@@ -342,6 +342,62 @@ for directory in extensions objects refs/heads refs/mirrors refs/remotes state t
 done
 pass "refreshing regenerates the website and keeps the repository and key"
 
+for failure in MOCK_OSTREE_CORRUPT MOCK_BAD_SUMMARY_SIGNATURE; do
+  failed_refresh=$temporary_directory/failed-refresh-$failure
+  cp -R "$site" "$failed_refresh"
+  cp "$failed_refresh/index.html" "$temporary_directory/index-before"
+  printf 'keep me\n' > "$failed_refresh/stale.html"
+  expect_failure \
+    "refreshing preserves the website when $failure fails verification" \
+    "error:" \
+    env "$failure=1" "$scripts/refresh-site.sh" "$failed_refresh"
+  cmp "$failed_refresh/index.html" "$temporary_directory/index-before"
+  [ -e "$failed_refresh/stale.html" ] || fail "failed verification deleted website files"
+done
+
+python3 - "$site" <<'PY'
+from html.parser import HTMLParser
+from pathlib import Path
+import sys
+
+site = Path(sys.argv[1])
+class Catalog(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.group = None
+        self.apps = {}
+        self.icons = []
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'section' and attrs.get('class') == 'catalog-group':
+            self.group = attrs['aria-label']
+        if tag == 'a' and attrs.get('class') == 'app-card':
+            self.apps[attrs['href'].split('/')[2]] = self.group
+        if tag == 'img' and 'app-icon' in attrs.get('class', '').split():
+            self.icons.append(attrs['src'])
+
+catalog = Catalog()
+catalog.feed((site / 'index.html').read_text())
+assert len(catalog.apps) == len(catalog.icons) == 4
+for name, group in [('AdventureMods', 'My apps'), ('PkgDeck', 'My apps'), ('Etcher', 'Third-party apps'), ('Ventoy', 'Third-party apps')]:
+    assert catalog.apps[f'io.github.astrovm.{name}'] == group
+for icon in catalog.icons:
+    assert (site / icon.lstrip('/')).stat().st_size > 0
+for name in ('Etcher', 'Ventoy'):
+    page = site / 'apps' / f'io.github.astrovm.{name}' / 'install/index.html'
+    assert f'/apps/io.github.astrovm.{name}/icon.png' in page.read_text()
+PY
+pass "catalog groups apps by ownership and publishes every icon on cards and install pages"
+for group in false true; do
+  grouped_registry=$temporary_directory/group-$group.json
+  grouped_site=$temporary_directory/group-$group-site
+  jq --argjson group "$group" '.apps |= map(select(.third_party == $group))' "$repository_root/apps.json" > "$grouped_registry"
+  expect_success \
+    "rendering supports a catalog with only ownership group $group" \
+    env APP_REGISTRY="$grouped_registry" "$scripts/render-site.sh" "$site/astrovm.gpg" "$grouped_site"
+  [ "$(grep -c 'class="catalog-group"' "$grouped_site/index.html")" -eq 1 ] || fail "rendering included an empty catalog group"
+done
+
 # Main can register an application before its first package publication.
 unpublished_registry=$temporary_directory/unpublished-apps.json
 jq '.apps += [{

@@ -6,6 +6,7 @@ trap 'rm -rf -- "$work"' EXIT
 mkdir -p "$work/bin" "$work/app/etcher/resources" "$work/app/libexec" "$work/app/ventoy" "$work/cache with spaces" "$work/config"
 export XDG_CACHE_HOME="$work/cache with spaces"
 export XDG_CONFIG_HOME="$work/config"
+export XDG_DATA_HOME="$work/data"
 export CALLS=$work/calls
 export PATH="$work/bin:$PATH"
 export MOCK_APP_DIRECTORY=$work/app
@@ -28,6 +29,11 @@ MOCK
 
 cat > "$work/bin/flatpak-spawn" <<'MOCK'
 #!/usr/bin/env bash
+for argument in "$@"; do
+  case "$argument" in
+    */VentoyGUI.*) test -x "$argument" || exit 127 ;;
+  esac
+done
 printf '%s\n' "$@" > "$CALLS"
 exit "${MOCK_STATUS:-0}"
 MOCK
@@ -38,6 +44,11 @@ MOCK
 cat > "$work/bin/zypak-wrapper" <<'MOCK'
 #!/usr/bin/env bash
 test -z "${ELECTRON_RUN_AS_NODE:-}"
+test -z "${APPIMAGE:-}"
+test -z "${APPDIR:-}"
+test -z "${ARGV0:-}"
+test "$HOME" = "$XDG_DATA_HOME"
+test -w "$HOME"
 test -x "$ETCHER_HOST_WRITER"
 test -x "$(dirname -- "$ETCHER_HOST_WRITER")/etcher-util"
 printf '%s\n' "$@" > "$CALLS"
@@ -46,6 +57,10 @@ MOCK
 printf '#!/usr/bin/env bash\nprintf "writer:%%s\\n" "$@"\n' > "$work/app/etcher/resources/etcher-util"
 cp "$root/scripts/etcher-host-writer.sh" "$work/app/libexec/etcher-host-writer"
 printf 'payload\n' > "$work/app/ventoy/data"
+for architecture in x86_64 aarch64; do
+  printf '#!/bin/sh\nexit 0\n' > "$work/app/ventoy/VentoyGUI.$architecture"
+  chmod +x "$work/app/ventoy/VentoyGUI.$architecture"
+done
 chmod +x "$work/bin/"* "$work/app/etcher/resources/etcher-util"
 
 expect_failure()
@@ -60,7 +75,7 @@ assert_clean()
   test -z "$(find "$XDG_CACHE_HOME" -mindepth 1 ! -path "$XDG_CACHE_HOME/ventoy" -print -quit)"
 }
 
-ELECTRON_RUN_AS_NODE=1 bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'
+ELECTRON_RUN_AS_NODE=1 APPIMAGE=/another-app APPDIR=/another-dir ARGV0=/another-app bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'
 grep -Fxq 'image with spaces.img' "$CALLS"
 assert_clean
 expect_failure env MOCK_STATUS=1 bash "$root/scripts/etcher-launch.sh"

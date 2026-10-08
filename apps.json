@@ -11,7 +11,8 @@
         "x86_64",
         "aarch64"
       ],
-      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
+      "third_party": false
     },
     {
       "repository": "astrovm/PkgDeck",
@@ -24,7 +25,8 @@
         "x86_64",
         "aarch64"
       ],
-      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
+      "third_party": false
     },
     {
       "repository": "balena-io/etcher",
@@ -36,7 +38,8 @@
       "architectures": [
         "x86_64"
       ],
-      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
+      "third_party": true
     },
     {
       "repository": "ventoy/Ventoy",
@@ -49,7 +52,8 @@
         "x86_64",
         "aarch64"
       ],
-      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
+      "third_party": true
     }
   ]
 }

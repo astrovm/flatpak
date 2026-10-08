@@ -43,6 +43,12 @@ expect_failure()
 }
 
 expect_success "application registry is valid" validate_app_registry
+jq '.apps[0].third_party = "yes"' "$APP_REGISTRY" > "$temporary_directory/bad-ownership.json"
+# shellcheck disable=SC2016
+expect_failure \
+  "application ownership must be a boolean when present" \
+  env APP_REGISTRY="$temporary_directory/bad-ownership.json" \
+  bash -c 'source "$1"; validate_app_registry' _ "$repository_root/scripts/lib/publish-common.sh"
 expect_success \
   "allowlisted source repository is accepted" \
   validate_source_repository \
