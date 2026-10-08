@@ -36,6 +36,7 @@ jobs:
           tests/test-publishing.sh
           tests/test-scripts.sh
           tests/test-packages.sh
+          tests/test-etcher-lsblk.sh
           tests/test-package-layouts.sh
           tests/test-package-updates.sh
 

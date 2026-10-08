@@ -21,6 +21,7 @@ on:
       - scripts/lib/package-versions.sh
       - tests/test-package-updates.sh
       - tests/test-built-etcher.mjs
+      - tests/test-etcher-lsblk.sh
       - tests/test-package-layouts.sh
       - tests/fixtures/**
       - .github/workflows/packages.yml
