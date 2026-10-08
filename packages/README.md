@@ -70,7 +70,11 @@ try to change host protocol settings from inside the sandbox.
 The launcher clears inherited AppImage variables and keeps Chromium's NSS database
 under the app's private data directory. The UI uses Wayland when available and
 falls back to X11. Image files under home and removable-media mounts are readable by the UI.
-The privileged writer opens the original host paths.
+The launcher uses Electron's native file picker instead of the document portal,
+so image selection returns the original path used by both the sandboxed reader
+and the privileged host writer. Document-portal FUSE paths can be inaccessible
+to a separate host process. The package already grants read access to home,
+`/media`, and `/run/media`; the picker does not grant access to other locations.
 
 Ventoy's release archive includes a leading `./` and a version directory. The
 recipe removes both and checks the GUI and companion-file paths before export.

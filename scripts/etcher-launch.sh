@@ -17,4 +17,6 @@ cp /app/etcher/resources/etcher-util "$writer_directory/etcher-util"
 cp /app/libexec/etcher-host-writer "$writer_directory/writer"
 chmod 700 "$writer_directory/etcher-util" "$writer_directory/writer"
 export ETCHER_HOST_WRITER=$writer_directory/writer
-zypak-wrapper /app/etcher/balena-etcher --ozone-platform-hint=auto "$@"
+# The host writer needs real paths, not document-portal FUSE paths. Use
+# Electron's native chooser for the home/media paths this package can read.
+zypak-wrapper /app/etcher/balena-etcher --ozone-platform-hint=auto --xdg-portal-required-version=999 "$@"
