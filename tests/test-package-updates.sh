@@ -79,6 +79,11 @@ printf 'wrong json\n' > "$work/invalid.json"
 mkdir -p "$work/bad/packages/etcher"
 cp "$work/invalid.json" "$work/bad/packages/etcher/io.github.astrovm.Etcher.json"
 expect_failure package_recipe_digest "$work/bad" etcher io.github.astrovm.Etcher
+reset_source
+jq -c . "$source_root/packages/ventoy/io.github.astrovm.Ventoy.json" > "$work/compact.json"
+mv "$work/compact.json" "$source_root/packages/ventoy/io.github.astrovm.Ventoy.json"
+bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json"
+grep -Fxq changed=false "$work/output"
 # A launcher or metadata change must build only its owning package.
 for input in scripts/etcher-launch.sh packages/etcher/io.github.astrovm.Etcher.metainfo.xml; do
   reset_source
