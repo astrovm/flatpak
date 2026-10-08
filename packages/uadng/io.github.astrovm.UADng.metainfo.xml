@@ -4,7 +4,7 @@
   <name>UAD-ng</name>
   <summary>Manage unwanted system apps on Android devices</summary>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>GPL-3.0-or-later</project_license>
+  <project_license>GPL-3.0-only</project_license>
   <developer id="io.github.universal-debloater-alliance"><name>Universal-Debloater-Alliance</name></developer>
   <description>
     <p>Browse Android system packages, read removal recommendations, and disable or restore apps using ADB.</p>
