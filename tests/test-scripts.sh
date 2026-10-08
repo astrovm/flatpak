@@ -342,6 +342,49 @@ for directory in extensions objects refs/heads refs/mirrors refs/remotes state t
 done
 pass "refreshing regenerates the website and keeps the repository and key"
 
+# Main can register an application before its first package publication.
+unpublished_registry=$temporary_directory/unpublished-apps.json
+jq '.apps += [{
+  repository: "astrovm/Unpublished",
+  id: "io.github.astrovm.Unpublished",
+  name: "Unpublished",
+  summary: "Registered before its first publication",
+  bundle_prefix: "Unpublished",
+  branch: "master",
+  architectures: ["x86_64"],
+  runtime_repository: "https://dl.flathub.org/repo/flathub.flatpakrepo"
+}]' "$repository_root/apps.json" > "$unpublished_registry"
+unpublished_site=$temporary_directory/unpublished-app-site
+cp -R "$refreshed_site" "$unpublished_site"
+expect_success \
+  "refreshing skips an application before its first publication" \
+  env -u GH_TOKEN -u FLATPAK_GPG_PRIVATE_KEY -u FLATPAK_GPG_KEY_ID \
+  APP_REGISTRY="$unpublished_registry" \
+  "$scripts/refresh-site.sh" "$unpublished_site"
+if [ -e "$unpublished_site/io.github.astrovm.Unpublished.flatpakref" ] ||
+  [ -d "$unpublished_site/apps/io.github.astrovm.Unpublished" ] ||
+  [ ! -s "$unpublished_site/io.github.astrovm.Ventoy.flatpakref" ] ||
+  [ ! -s "$unpublished_site/index.html" ]; then
+  fail "refreshing rendered an unpublished application or dropped published ones"
+fi
+pass "an unpublished application is skipped and published ones are rendered"
+
+# The site still advertises an application whose refs are missing.
+advertised_site=$temporary_directory/advertised-site
+cp -R "$site" "$advertised_site"
+grep -v 'io.github.astrovm.Ventoy' "$advertised_site/repo/refs-list" \
+  > "$advertised_site/repo/refs-list.remaining"
+mv "$advertised_site/repo/refs-list.remaining" "$advertised_site/repo/refs-list"
+printf 'stale\n' > "$advertised_site/stale.html"
+expect_failure \
+  "refreshing keeps an advertised application in the repository checks" \
+  "Repository is missing expected ref: app/io.github.astrovm.Ventoy/" \
+  env -u GH_TOKEN -u FLATPAK_GPG_PRIVATE_KEY -u FLATPAK_GPG_KEY_ID \
+  "$scripts/refresh-site.sh" "$advertised_site"
+[ -e "$advertised_site/stale.html" ] ||
+  fail "refreshing replaced website files before validation failed"
+pass "refreshing validates the repository before replacing website files"
+
 expect_failure \
   "refreshing requires one argument" \
   "usage:" \
