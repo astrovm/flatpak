@@ -70,6 +70,10 @@ try to change host protocol settings from inside the sandbox.
 The launcher clears inherited AppImage variables and keeps Chromium's NSS database
 under the app's private data directory. The UI uses Wayland when available and
 falls back to X11. Image files under home and removable-media mounts are readable by the UI.
+Before changing `HOME`, the launcher resolves the desktop's standard folders.
+GTK receives a temporary config directory with absolute folder paths, while
+the other app settings link back to the persistent private config directory.
+Documents and Downloads shortcuts therefore keep pointing at the real folders.
 The launcher uses Electron's native file picker instead of the document portal,
 so image selection returns the original path used by both the sandboxed reader
 and the privileged host writer. Document-portal FUSE paths can be inaccessible

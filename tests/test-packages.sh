@@ -7,6 +7,14 @@ mkdir -p "$work/bin" "$work/app/etcher/resources" "$work/app/libexec" "$work/app
 export XDG_CACHE_HOME="$work/cache with spaces"
 export XDG_CONFIG_HOME="$work/config"
 export XDG_DATA_HOME="$work/data"
+export ORIGINAL_CONFIG_HOME=$XDG_CONFIG_HOME
+export ORIGINAL_HOME=$work/home
+export HOME=$ORIGINAL_HOME
+mkdir -p "$HOME/Documents" "$HOME/Downloads" "$XDG_CONFIG_HOME/balenaEtcher"
+printf 'saved settings\n' > "$XDG_CONFIG_HOME/balenaEtcher/config.json"
+# shellcheck disable=SC2016
+printf 'XDG_DOCUMENTS_DIR="$HOME/Documents"\nXDG_DOWNLOAD_DIR="$HOME/Downloads"\n' > "$XDG_CONFIG_HOME/user-dirs.dirs"
+export CONFIG_CAPTURE=$work/config-capture
 export CALLS=$work/calls
 export PATH="$work/bin:$PATH"
 export MOCK_APP_DIRECTORY=$work/app
@@ -50,6 +58,13 @@ test -z "${APPDIR:-}"
 test -z "${ARGV0:-}"
 test "$HOME" = "$XDG_DATA_HOME"
 test -w "$HOME"
+test "$(xdg-user-dir DOCUMENTS)" = "$ORIGINAL_HOME/Documents"
+test "$(xdg-user-dir DOWNLOAD)" = "$ORIGINAL_HOME/Downloads"
+test "$XDG_CONFIG_HOME" != "$ORIGINAL_CONFIG_HOME"
+printf '%s\n' "$XDG_CONFIG_HOME" > "$CONFIG_CAPTURE"
+test -L "$XDG_CONFIG_HOME/balenaEtcher"
+test "$(cat "$XDG_CONFIG_HOME/balenaEtcher/config.json")" = 'saved settings'
+printf 'updated settings\n' > "$XDG_CONFIG_HOME/balenaEtcher/config.json"
 test -x "$ETCHER_HOST_WRITER"
 test -x "$(dirname -- "$ETCHER_HOST_WRITER")/etcher-util"
 printf '%s\n' "$@" > "$CALLS"
@@ -75,11 +90,16 @@ expect_failure()
 assert_clean()
 {
   test -z "$(find "$XDG_CACHE_HOME" -mindepth 1 ! -path "$XDG_CACHE_HOME/ventoy" -print -quit)"
+  if [[ -f "$CONFIG_CAPTURE" ]]; then
+    test ! -e "$(cat "$CONFIG_CAPTURE")"
+  fi
 }
 
 ELECTRON_RUN_AS_NODE=1 APPIMAGE=/another-app APPDIR=/another-dir ARGV0=/another-app bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'
 grep -Fxq 'image with spaces.img' "$CALLS"
 assert_clean
+grep -Fxq 'updated settings' "$ORIGINAL_CONFIG_HOME/balenaEtcher/config.json"
+printf 'saved settings\n' > "$ORIGINAL_CONFIG_HOME/balenaEtcher/config.json"
 expect_failure env MOCK_STATUS=1 bash "$root/scripts/etcher-launch.sh"
 assert_clean
 bash "$root/scripts/ventoy-launch.sh" 'argument with spaces'
