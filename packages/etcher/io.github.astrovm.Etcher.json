@@ -1,0 +1,81 @@
+{
+  "app-id": "io.github.astrovm.Etcher",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "50",
+  "sdk": "org.gnome.Sdk",
+  "command": "etcher",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--talk-name=org.freedesktop.Flatpak",
+    "--share=network",
+    "--device=all",
+    "--filesystem=home:ro",
+    "--filesystem=/media:ro",
+    "--filesystem=/run/media:ro"
+  ],
+  "modules": [
+    {
+      "name": "zypak",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/refi64/zypak",
+          "tag": "v2025.09",
+          "commit": "693a71c5ffa80ec9c9ce2ae03b1ccc493c698e53"
+        }
+      ]
+    },
+    {
+      "name": "etcher",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm755 etcher-launch.sh /app/bin/etcher",
+        "install -Dm644 io.github.astrovm.Etcher.desktop /app/share/applications/io.github.astrovm.Etcher.desktop",
+        "install -Dm644 io.github.astrovm.Etcher.metainfo.xml /app/share/metainfo/io.github.astrovm.Etcher.metainfo.xml",
+        "install -Dm644 io.github.astrovm.Etcher.png /app/share/icons/hicolor/256x256/apps/io.github.astrovm.Etcher.png",
+        "mv balenaEtcher-linux-x64 /app/etcher",
+        "chmod +x /app/etcher/balena-etcher /app/etcher/resources/etcher-util",
+        "install -Dm755 etcher-pkexec.sh /app/bin/pkexec",
+        "install -Dm755 etcher-host-writer.sh /app/libexec/etcher-host-writer",
+        "python3 -c \"from pathlib import Path; p=Path('/app/etcher/resources/app.asar'); b=p.read_bytes(); old=b'/usr/bin/pkexec'; new=b'/app/bin/pkexec'; assert len(old)==len(new) and b.count(old)==1, 'Unexpected Etcher elevation code'; p.write_bytes(b.replace(old,new))\""
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "path": "../../scripts/etcher-launch.sh"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.Etcher.desktop"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.Etcher.metainfo.xml"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.Etcher.png"
+        },
+        {
+          "type": "file",
+          "path": "../../scripts/etcher-pkexec.sh"
+        },
+        {
+          "type": "file",
+          "path": "../../scripts/etcher-host-writer.sh"
+        },
+        {
+          "type": "archive",
+          "archive-type": "zip",
+          "strip-components": 0,
+          "url": "https://github.com/balena-io/etcher/releases/download/v2.1.7/balenaEtcher-linux-x64-2.1.7.zip",
+          "sha256": "6602dc2195f422daf7c5bc3eaf0eaff1def7ccd8aba0cd9b36e8966b4e0e6d16",
+          "only-arches": [
+            "x86_64"
+          ]
+        }
+      ]
+    }
+  ]
+}

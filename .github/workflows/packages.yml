@@ -1,0 +1,143 @@
+name: Build USB tools
+
+on:
+  pull_request:
+    paths:
+      - packages/**
+      - scripts/etcher-*.sh
+      - scripts/ventoy-launch.sh
+      - .github/workflows/packages.yml
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish both tools to the signed Flatpak repository
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: etcher
+            id: io.github.astrovm.Etcher
+            version: 2.1.7
+            arch: x86_64
+            runner: ubuntu-26.04
+          - package: ventoy
+            id: io.github.astrovm.Ventoy
+            version: 1.1.17
+            arch: x86_64
+            runner: ubuntu-26.04
+          - package: ventoy
+            id: io.github.astrovm.Ventoy
+            version: 1.1.17
+            arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder git-lfs
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      - name: Build package
+        env:
+          PACKAGE: ${{ matrix.package }}
+          APP_ID: ${{ matrix.id }}
+          VERSION: ${{ matrix.version }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          flatpak-builder --user --install-deps-from=flathub --assumeyes \
+            --jobs=2 --repo=build-repo build "packages/$PACKAGE/$APP_ID.json"
+          mkdir bundles
+          flatpak build-bundle build-repo "bundles/$APP_ID-v$VERSION-$ARCH.flatpak" "$APP_ID" master
+          (cd bundles && sha256sum ./*.flatpak > SHA256SUMS)
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.package }}-${{ matrix.arch }}
+          path: bundles/
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: build
+    runs-on: ubuntu-26.04
+    environment: flatpak-signing
+    permissions:
+      contents: write
+    concurrency:
+      group: flatpak-repository
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: bundles
+      - name: Install publishing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak gnupg jq ostree
+      - name: Prepare published snapshot
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          git fetch origin gh-pages:refs/remotes/origin/gh-pages
+          git worktree add --detach site origin/gh-pages
+      - name: Sign, import and verify packages
+        env:
+          FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+        run: |
+          set -euo pipefail
+          signing_home=$(mktemp -d "$RUNNER_TEMP/flatpak-signing.XXXXXX")
+          trap 'rm -rf -- "$signing_home"' EXIT
+          chmod 700 "$signing_home"
+          printf '%s\n' "$FLATPAK_GPG_PRIVATE_KEY" | gpg --batch --homedir "$signing_home" --import
+          gpg --batch --homedir "$signing_home" --list-secret-keys "$FLATPAK_GPG_KEY_ID" >/dev/null
+          source scripts/lib/publish-common.sh
+          validate_app_registry
+          restore_repository_directories site/repo
+          ostree fsck --quiet --repo=site/repo
+          test "$(find bundles -type f -name '*.flatpak' | wc -l)" -eq 3
+          for artifact in bundles/*; do
+            (cd "$artifact" && sha256sum --check SHA256SUMS)
+            for bundle in "$artifact"/*.flatpak; do
+              inspection=$(mktemp -d "$RUNNER_TEMP/flatpak-inspect.XXXXXX")
+              ostree init --repo="$inspection" --mode=archive-z2
+              flatpak build-import-bundle --no-update-summary "$inspection" "$bundle"
+              case "$artifact" in
+                bundles/etcher-x86_64) expected=app/io.github.astrovm.Etcher/x86_64/master ;;
+                bundles/ventoy-x86_64) expected=app/io.github.astrovm.Ventoy/x86_64/master ;;
+                bundles/ventoy-aarch64) expected=app/io.github.astrovm.Ventoy/aarch64/master ;;
+                *) echo 'Unexpected build artifact' >&2; exit 1 ;;
+              esac
+              test "$(ostree refs --repo="$inspection")" = "$expected"
+              rm -rf -- "$inspection"
+              flatpak build-import-bundle --no-update-summary \
+                --gpg-sign="$FLATPAK_GPG_KEY_ID" --gpg-homedir="$signing_home" site/repo "$bundle"
+            done
+          done
+          flatpak build-update-repo --generate-static-deltas \
+            --gpg-sign="$FLATPAK_GPG_KEY_ID" --gpg-homedir="$signing_home" site/repo
+          validate_repository_refs site/repo
+          gpg --batch --homedir "$signing_home" --export "$FLATPAK_GPG_KEY_ID" > "$RUNNER_TEMP/public.gpg"
+          cmp site/astrovm.gpg "$RUNNER_TEMP/public.gpg"
+          scripts/render-site.sh "$RUNNER_TEMP/public.gpg" site
+          scripts/verify-repository.sh site
+      - name: Publish snapshot
+        run: |
+          git -C site config user.name 'github-actions[bot]'
+          git -C site config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C site add --all
+          if git -C site diff --cached --quiet; then exit 0; fi
+          tree=$(git -C site write-tree)
+          commit=$(printf 'Publish Etcher and Ventoy\n' | git -C site commit-tree "$tree")
+          git -C site push --force origin "$commit:refs/heads/gh-pages"

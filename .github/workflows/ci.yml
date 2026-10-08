@@ -35,6 +35,14 @@ jobs:
         run: |
           tests/test-publishing.sh
           tests/test-scripts.sh
+          tests/test-packages.sh
+
+      - name: Validate package metadata
+        run: |
+          sudo apt-get install -y appstream desktop-file-utils
+          for manifest in packages/*/*.json; do jq -e . "$manifest" >/dev/null; done
+          desktop-file-validate packages/*/*.desktop
+          for metadata in packages/*/*.metainfo.xml; do appstreamcli validate --no-net "$metadata"; done
 
       - name: Measure test coverage
         run: tests/coverage.sh

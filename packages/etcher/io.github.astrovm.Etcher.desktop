@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=balenaEtcher
+Comment=Flash operating system images to USB drives and SD cards
+Exec=etcher
+Icon=io.github.astrovm.Etcher
+Terminal=false
+Categories=System;Utility;

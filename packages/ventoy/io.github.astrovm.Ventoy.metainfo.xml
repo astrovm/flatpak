@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.astrovm.Ventoy</id>
+  <name>Ventoy</name>
+  <summary>Create a USB drive that boots multiple ISO images</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="net.ventoy"><name>Ventoy</name></developer>
+  <description>
+    <p>Create a USB drive that boots multiple ISO images.</p>
+    <p>This unofficial package is maintained by astrovm. Disk operations use a host bridge and require administrator approval through Polkit.</p>
+  </description>
+  <launchable type="desktop-id">io.github.astrovm.Ventoy.desktop</launchable>
+  <url type="homepage">https://www.ventoy.net/</url>
+  <url type="bugtracker">https://github.com/astrovm/flatpak/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="1.1.17" date="2026-07-24"/></releases>
+</component>

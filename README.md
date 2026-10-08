@@ -2,12 +2,16 @@
 
 **Install and update astrovm's apps with Flatpak.**
 
-The official repository for apps by [astrovm](https://github.com/astrovm), served from `https://flatpak.4st.li/`.
+The repository for apps published by [astrovm](https://github.com/astrovm), served from `https://flatpak.4st.li/`.
 
 ## Apps
 
 - [Adventure Mods](https://flatpak.4st.li/apps/io.github.astrovm.AdventureMods/install/)
 - [PkgDeck](https://flatpak.4st.li/apps/io.github.astrovm.PkgDeck/install/)
+
+This repo also builds unofficial **balenaEtcher 2.1.7** (x86_64) and
+**Ventoy 1.1.17** (x86_64 and aarch64). See [the build and host bridge notes](packages/README.md).
+These tools require host administrator access for disk operations.
 
 ## ⬇️ Install
 
@@ -51,6 +55,11 @@ configured architecture in an immutable GitHub release, then sends a
   }
 }
 ```
+
+Etcher and Ventoy use the separate **Build USB tools** workflow because their
+upstream releases do not contain Flatpak bundles. Its manual **publish** option
+builds both pinned releases, imports them with the existing signing key, and
+verifies the complete repository before updating `gh-pages`.
 
 The publishing workflow:
 

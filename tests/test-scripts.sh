@@ -227,6 +227,8 @@ refs_for_app()
 all_registered_refs=$(
   refs_for_app io.github.astrovm.AdventureMods master x86_64 aarch64
   refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64
+  refs_for_app io.github.astrovm.Etcher master x86_64
+  refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
 )
 
 # Release fixtures for AdventureMods v1.2.3.
@@ -268,7 +270,11 @@ seed_site()
 
   mkdir -p "$site/repo"
   printf '[core]\nmode=archive-z2\n' > "$site/repo/config"
-  refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64 > "$site/repo/refs-list"
+  {
+    refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64
+    refs_for_app io.github.astrovm.Etcher master x86_64
+    refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
+  } > "$site/repo/refs-list"
   mkdir -p "$site/.git"
   printf 'stale\n' > "$site/stale.html"
 }
@@ -284,7 +290,7 @@ if ! grep -Fq "Verified signed Flatpak repository" "$temporary_directory/last-ou
     "$temporary_directory/last-output"; then
   fail "publishing did not report the imported bundles"
 fi
-if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 4 ] ||
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ] ||
   [ -e "$site/stale.html" ] || [ ! -d "$site/.git" ] ||
   [ "$(cat "$site/CNAME")" != "flatpak.4st.li" ] ||
   [ ! -f "$site/.nojekyll" ] ||
@@ -646,7 +652,7 @@ pass "a failed publish leaves the previous website in place"
 expect_success \
   "publishing the same release again succeeds" \
   "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
-if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 4 ]; then
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ]; then
   fail "republishing changed the set of application refs"
 fi
 pass "republishing a release keeps exactly one ref per application and architecture"
