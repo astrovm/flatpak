@@ -52,6 +52,7 @@ test -w "$HOME"
 test -x "$ETCHER_HOST_WRITER"
 test -x "$(dirname -- "$ETCHER_HOST_WRITER")/etcher-util"
 printf '%s\n' "$@" > "$CALLS"
+test "${3:-}" = --xdg-portal-required-version=999
 exit "${MOCK_STATUS:-0}"
 MOCK
 printf '#!/usr/bin/env bash\nprintf "writer:%%s\\n" "$@"\n' > "$work/app/etcher/resources/etcher-util"
