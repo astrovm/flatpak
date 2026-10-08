@@ -1,4 +1,4 @@
-name: Build USB tools
+name: Build third-party apps
 
 on:
   schedule:
@@ -9,6 +9,8 @@ on:
       - packages/**
       - scripts/etcher-*.sh
       - scripts/ventoy-launch.sh
+      - scripts/qtscrcpy-launch.sh
+      - scripts/uadng-launch.sh
       - scripts/update-packages.sh
       - scripts/lib/package-versions.sh
       - .github/workflows/packages.yml
@@ -17,9 +19,13 @@ on:
       - packages/**
       - scripts/etcher-*.sh
       - scripts/ventoy-launch.sh
+      - scripts/qtscrcpy-launch.sh
+      - scripts/uadng-launch.sh
       - scripts/update-packages.sh
       - scripts/lib/package-versions.sh
       - tests/test-package-updates.sh
+      - tests/test-android-tools.sh
+      - tests/test-built-android-tools.py
       - tests/test-built-etcher.mjs
       - tests/test-etcher-lsblk.sh
       - tests/test-package-layouts.sh
@@ -28,7 +34,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: Publish changed tools to the signed Flatpak repository
+        description: Publish changed apps to the signed Flatpak repository
         type: boolean
         default: false
       update:
@@ -80,7 +86,7 @@ jobs:
           desktop-file-validate packages/*/*.desktop
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: usb-tool-recipes
+          name: third-party-recipes
           path: |
             packages/
             scripts/
@@ -98,7 +104,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: usb-tool-recipes
+          name: third-party-recipes
           path: .
       - name: Restore launcher permissions
         run: chmod +x scripts/*.sh scripts/lib/*.sh
@@ -118,6 +124,9 @@ jobs:
             --jobs=2 --repo=build-repo build "packages/$PACKAGE/$APP_ID.json"
           if [ "$PACKAGE" = etcher ]; then
             node tests/test-built-etcher.mjs build "packages/$PACKAGE/$APP_ID.json"
+          fi
+          if [[ "$PACKAGE" = qtscrcpy || "$PACKAGE" = uadng ]]; then
+            python3 tests/test-built-android-tools.py build "packages/$PACKAGE/$APP_ID.json"
           fi
           mkdir bundles
           flatpak build-bundle build-repo "bundles/$APP_ID-v$VERSION-$ARCH.flatpak" "$APP_ID" master
@@ -149,7 +158,7 @@ jobs:
           pattern: '*-*64'
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: usb-tool-recipes
+          name: third-party-recipes
           path: recipes
       - name: Install publishing tools
         run: |
@@ -189,12 +198,7 @@ jobs:
               inspection=$(mktemp -d "$RUNNER_TEMP/flatpak-inspect.XXXXXX")
               ostree init --repo="$inspection" --mode=archive-z2
               flatpak build-import-bundle --no-update-summary "$inspection" "$bundle"
-              case "$artifact" in
-                bundles/etcher-x86_64) expected=app/io.github.astrovm.Etcher/x86_64/master ;;
-                bundles/ventoy-x86_64) expected=app/io.github.astrovm.Ventoy/x86_64/master ;;
-                bundles/ventoy-aarch64) expected=app/io.github.astrovm.Ventoy/aarch64/master ;;
-                *) echo 'Unexpected build artifact' >&2; exit 1 ;;
-              esac
+              expected=$(package_artifact_ref "$BUILD_MATRIX" "${artifact#bundles/}")
               test "$(ostree refs --repo="$inspection")" = "$expected"
               rm -rf -- "$inspection"
               flatpak build-import-bundle --no-update-summary \
@@ -219,5 +223,5 @@ jobs:
           git -C site add --all
           if git -C site diff --cached --quiet; then exit 0; fi
           tree=$(git -C site write-tree)
-          commit=$(printf 'Publish Etcher and Ventoy\n' | git -C site commit-tree "$tree")
+          commit=$(printf 'Publish third-party apps\n' | git -C site commit-tree "$tree")
           git -C site push --force origin "$commit:refs/heads/gh-pages"

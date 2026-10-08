@@ -1,0 +1,68 @@
+{
+  "app-id": "io.github.astrovm.UADng",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "50",
+  "sdk": "org.gnome.Sdk",
+  "command": "uadng",
+  "finish-args": [
+    "--share=ipc",
+    "--share=network",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--device=all"
+  ],
+  "modules": [
+    {
+      "name": "uadng",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm755 uadng-launch.sh /app/bin/uadng",
+        "install -Dm644 io.github.astrovm.UADng.desktop /app/share/applications/io.github.astrovm.UADng.desktop",
+        "install -Dm644 io.github.astrovm.UADng.metainfo.xml /app/share/metainfo/io.github.astrovm.UADng.metainfo.xml",
+        "install -Dm644 io.github.astrovm.UADng.png /app/share/icons/hicolor/256x256/apps/io.github.astrovm.UADng.png",
+        "install -Dm644 LICENSE /app/share/licenses/uadng/LICENSE",
+        "install -Dm644 NOTICE.adb /app/share/licenses/adb/NOTICE",
+        "install -Dm755 adb-upstream/adb /app/bin/adb",
+        "install -Dm755 uad-ng-noselfupdate-linux /app/libexec/uadng"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "path": "../../scripts/uadng-launch.sh"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.UADng.desktop"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.UADng.metainfo.xml"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.UADng.png"
+        },
+        {
+          "type": "file",
+          "path": "LICENSE"
+        },
+        {
+          "type": "file",
+          "path": "NOTICE.adb"
+        },
+        {
+          "type": "archive",
+          "url": "https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/releases/download/v1.2.0/uad-ng-noselfupdate-linux.tar.gz",
+          "sha256": "980273195eb39ae43c776159252d67be0a5eea31faf88b600c2f9218cb099314",
+          "strip-components": 0
+        },
+        {
+          "type": "archive",
+          "url": "https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-linux-x86_64-v5.0.1.tar.gz",
+          "sha256": "9f969d30cc574816077edecda65719c1c70b0aee1df1ba5fa00779ac07b8fd6e",
+          "dest": "adb-upstream"
+        }
+      ]
+    }
+  ]
+}

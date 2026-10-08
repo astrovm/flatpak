@@ -36,6 +36,7 @@ jobs:
           tests/test-publishing.sh
           tests/test-scripts.sh
           tests/test-packages.sh
+          tests/test-android-tools.sh
           tests/test-etcher-lsblk.sh
           tests/test-package-layouts.sh
           tests/test-package-updates.sh
@@ -49,6 +50,9 @@ jobs:
 
       - name: Measure test coverage
         run: tests/coverage.sh
+
+      - name: Mutation test Android packaging
+        run: python3 tests/mutate-android-packages.py
 
       - name: Validate HTML templates
         run: tidy -errors -quiet templates/*.html

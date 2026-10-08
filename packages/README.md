@@ -1,8 +1,9 @@
-# Etcher and Ventoy
+# Third-party apps
 
 Unofficial Flatpak packages maintained by astrovm. The application binaries and
 icons come from [balenaEtcher](https://github.com/balena-io/etcher/releases/tag/v2.1.7)
 and [Ventoy](https://github.com/ventoy/Ventoy/releases/tag/v1.1.17).
+The Android tools are described below.
 These recipes package upstream release binaries; they do not compile the apps
 from source. Downloads have pinned SHA-256 checksums.
 
@@ -10,6 +11,8 @@ from source. Downloads have pinned SHA-256 checksums.
 | --- | --- | --- | --- |
 | balenaEtcher | 2.1.7 | x86_64 | `io.github.astrovm.Etcher` |
 | Ventoy | 1.1.17 | x86_64, aarch64 | `io.github.astrovm.Ventoy` |
+| QtScrcpy | 4.2.1 | x86_64 | `io.github.astrovm.QtScrcpy` |
+| UAD-ng | 1.2.0 | x86_64 | `io.github.astrovm.UADng` |
 
 ## Build locally
 
@@ -43,10 +46,49 @@ flatpak install --user ./Etcher-v2.1.7-x86_64.flatpak
 flatpak run io.github.astrovm.Etcher
 ```
 
+## Android tools
+
+Build the Android apps with the same command, using
+`packages/qtscrcpy/io.github.astrovm.QtScrcpy.json` or
+`packages/uadng/io.github.astrovm.UADng.json` as the manifest.
+
+[QtScrcpy 4.2.1](https://github.com/barry-ran/QtScrcpy/releases/tag/v4.2.1)
+is extracted from the official Linux AppImage without FUSE. Its bundled Qt 5
+libraries, plugins, keymaps and scrcpy server are retained. The release lacks
+its Qt Wayland client library, so this package uses X11 or XWayland. The launcher
+keeps Flatpak’s graphics-driver library path available for screen rendering. The old bundled ADB
+is replaced with ADB 37.0.1 from the official
+[scrcpy 5.0.1 Linux release](https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1).
+Both Android apps use this dependency. Its archive and the ADB Apache notice are
+included in the recipe; automatic dependency updates rebuild both Android apps.
+
+[UAD-ng 1.2.0](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/releases/tag/v1.2.0)
+uses the official `noselfupdate` binary. Flatpak owns application updates.
+Upstream package-description downloads remain enabled. Settings and caches use
+Flatpak's private XDG directories. Selection exports and CSV backups are saved
+in `~/.var/app/io.github.astrovm.UADng/data/uad-ng/`.
+QtScrcpy config is in `~/.var/app/io.github.astrovm.QtScrcpy/config/qtscrcpy/`.
+ADB keys are stored under each app's private `data/android/` directory.
+
+Enable **USB debugging** on Android and approve the computer's authorization
+prompt. The apps need network access for wireless ADB and the shared local ADB
+server, and device access for USB debugging. `--device=all` also exposes other
+host devices because upstream ADB does not use Flatpak's USB portal. Neither app
+has permission to execute arbitrary commands on the host. A running host ADB
+server can be reused; its device list and authorization keys are owned by that
+server. If the device shows a permissions error, install your distribution's
+Android udev rules on the host. A Flatpak cannot supply host udev rules.
+
+These upstream releases provide only x86_64 Linux binaries. ARM64 support needs
+separate source builds. Android can refuse removal of protected system apps;
+UAD-ng reports the ADB error, and its disable mode is an alternative where the
+device permits it. QtScrcpy's **install sndcpy** and audio controls require
+the external sndcpy/VLC setup; they are outside this package's supported scope.
+
 ## Host bridge
 
 [Flatpak's device permission](https://docs.flatpak.org/en/latest/sandbox-permissions.html)
-does not grant root privileges. These tools use `org.freedesktop.Flatpak` host
+does not grant root privileges. Etcher and Ventoy use `org.freedesktop.Flatpak` host
 execution with the user's explicit Polkit approval. This permission allows
 host execution, so these packages should not be treated as fully isolated apps.
 No persistent root service, setuid executable, or passwordless policy is installed.
@@ -101,33 +143,37 @@ provide libraries to processes that run on the host.
 
 ## CI and publication
 
-**Build USB tools** builds changed packages on its native architecture for relevant
+**Build third-party apps** builds changed packages on its native architecture for relevant
 pull requests. The built Etcher helper is also tested with synthetic raw and gzip
 images, truncated gzip data, and a missing file, without opening block devices.
-Download its `.flatpak` artifacts and `SHA256SUMS` to test locally.
+The Android builds also check bundled ADB and binary/plugin dependencies inside
+the Flatpak runtime. Local Cua checks cover emulator mirroring/control and UAD-ng
+package discovery, denied removal, disable/enable and writable storage.
+Download the `.flatpak` artifacts and `SHA256SUMS` to test locally.
 PR builds never use signing secrets or publish the repository.
 
 After merge, updates are automatic. The workflow checks GitHub's latest stable
-release for both upstream projects every day at **09:43 UTC (06:43 Argentina)**.
+releases for all four apps and the shared ADB dependency every day at **09:43 UTC (06:43 Argentina)**.
 GitHub may delay scheduled jobs. Relevant changes pushed to `main`, including
 the initial merge, also build and publish automatically.
 
-The resolver requires a normal `vX.Y.Z` release tag, one matching Linux archive,
+The resolver requires a normal `vX.Y.Z` release tag, one matching Linux asset,
 and a GitHub-provided SHA-256 digest. It updates the generated manifests and
-AppStream release versions/dates together. Both upstream requests must succeed
-before either recipe changes. Prereleases, missing checksums, malformed releases,
+AppStream release versions/dates together. All upstream requests must succeed
+before any recipe changes. Prereleases, missing checksums, malformed releases,
 API failures, and downgrades stop the run and leave the published repository as it
 was. Unchanged daily checks skip the native builds and publication.
 
 Changed releases pass the script tests, 100% coverage gate, metadata validation,
 and the selected native builds before publication. A digest of each manifest
 and its local sources selects packages independently: changing Etcher leaves
-Ventoy’s Flatpak commit unchanged. Existing refs are kept during partial publication. Etcher's reviewed Linux elevation
+Ventoy’s Flatpak commit unchanged. QtScrcpy and UAD-ng recipe changes also build
+independently. Existing refs are kept during partial publication. Etcher's reviewed Linux elevation
 function must still match its compatibility checksum. A changed contract needs a
 maintainer to review and adapt the host bridge before automatic updates resume.
 
 Generated checksum-pinned recipes and launchers are uploaded as the
-`usb-tool-recipes` workflow artifact and saved under `usb-tools/` in `gh-pages`.
+`third-party-recipes` workflow artifact and saved under `usb-tools/` in `gh-pages`.
 The published `usb-tools/packages/releases.json` records the versions and source
 checksums and recipe digests used. Website refreshes and publication of other apps preserve this
 snapshot. Recipes checked into `main` remain the baseline for PR and local builds;
@@ -156,5 +202,5 @@ are rejected before publication. There is no extra token or manual PR merge for
 routine upstream updates; the existing signing secrets are reused.
 
 The first automatic publication starts after merge. Until it finishes, health
-checks can report missing Etcher and Ventoy refs. Successful automated builds do
+checks can report missing refs for newly added apps. Successful automated builds do
 not verify physical USB writing or a complete desktop Polkit authentication flow.

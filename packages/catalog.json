@@ -1,0 +1,54 @@
+[
+  {
+    "package": "etcher",
+    "id": "io.github.astrovm.Etcher",
+    "upstream": "balena-io/etcher",
+    "asset_prefix": "balenaEtcher-linux-x64-",
+    "asset_suffix": ".zip",
+    "architectures": [
+      "x86_64"
+    ]
+  },
+  {
+    "package": "ventoy",
+    "id": "io.github.astrovm.Ventoy",
+    "upstream": "ventoy/Ventoy",
+    "asset_prefix": "ventoy-",
+    "asset_suffix": "-linux.tar.gz",
+    "architectures": [
+      "x86_64",
+      "aarch64"
+    ]
+  },
+  {
+    "package": "qtscrcpy",
+    "id": "io.github.astrovm.QtScrcpy",
+    "upstream": "barry-ran/QtScrcpy",
+    "asset_prefix": "QtScrcpy-ubuntu-x64-v",
+    "asset_suffix": ".AppImage",
+    "architectures": [
+      "x86_64"
+    ]
+  },
+  {
+    "package": "uadng",
+    "id": "io.github.astrovm.UADng",
+    "upstream": "Universal-Debloater-Alliance/universal-android-debloater-next-generation",
+    "asset_prefix": "uad-ng-noselfupdate-linux",
+    "asset_suffix": ".tar.gz",
+    "asset_version": false,
+    "architectures": [
+      "x86_64"
+    ]
+  },
+  {
+    "package": "adb",
+    "upstream": "Genymobile/scrcpy",
+    "asset_prefix": "scrcpy-linux-x86_64-v",
+    "asset_suffix": ".tar.gz",
+    "targets": [
+      "qtscrcpy",
+      "uadng"
+    ]
+  }
+]

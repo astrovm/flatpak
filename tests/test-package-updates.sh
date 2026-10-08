@@ -15,6 +15,9 @@ fi
 case "$*" in
   'api repos/balena-io/etcher/releases/latest') cat "$RELEASE_FIXTURES/etcher.json" ;;
   'api repos/ventoy/Ventoy/releases/latest') cat "$RELEASE_FIXTURES/ventoy.json" ;;
+  'api repos/barry-ran/QtScrcpy/releases/latest') cat "$RELEASE_FIXTURES/qtscrcpy.json" ;;
+  'api repos/Universal-Debloater-Alliance/universal-android-debloater-next-generation/releases/latest') cat "$RELEASE_FIXTURES/uadng.json" ;;
+  'api repos/Genymobile/scrcpy/releases/latest') cat "$RELEASE_FIXTURES/adb.json" ;;
   *) exit 1 ;;
 esac
 MOCK
@@ -33,14 +36,15 @@ reset_source()
 }
 fixtures()
 {
-  for package in etcher ventoy; do
-    if [ "$package" = etcher ]; then
-      repository=balena-io/etcher
-      asset=balenaEtcher-linux-x64-99.0.1.zip
-    else
-      repository=ventoy/Ventoy
-      asset=ventoy-99.0.1-linux.tar.gz
-    fi
+  local package repository asset
+  for package in etcher ventoy qtscrcpy uadng adb; do
+    case "$package" in
+      etcher) repository=balena-io/etcher; asset=balenaEtcher-linux-x64-99.0.1.zip ;;
+      ventoy) repository=ventoy/Ventoy; asset=ventoy-99.0.1-linux.tar.gz ;;
+      qtscrcpy) repository=barry-ran/QtScrcpy; asset=QtScrcpy-ubuntu-x64-v99.0.1.AppImage ;;
+      uadng) repository=Universal-Debloater-Alliance/universal-android-debloater-next-generation; asset=uad-ng-noselfupdate-linux.tar.gz ;;
+      adb) repository=Genymobile/scrcpy; asset=scrcpy-linux-x86_64-v99.0.1.tar.gz ;;
+    esac
     jq -n --arg asset "$asset" --arg repository "$repository" \
       '{tag_name:"v99.0.1",draft:false,prerelease:false,published_at:"2026-10-08T12:00:00Z",assets:[{name:$asset,browser_download_url:("https://github.com/"+$repository+"/releases/download/v99.0.1/"+$asset),digest:("sha256:"+("a"*64))}]}' > "$work/$package.json"
   done
@@ -63,8 +67,9 @@ expect_failure bash "$updater" "$source_root" pinned
 reset_source
 bash "$updater" "$source_root" pinned "$work/output"
 grep -Fxq changed=true "$work/output"
-sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 3' >/dev/null
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 5' >/dev/null
 cp "$source_root/packages/releases.json" "$work/previous.json"
+cp "$work/previous.json" "$work/pinned-previous.json"
 verify_package_versions "$work/previous.json" "$work/missing.json"
 verify_package_versions "$work/previous.json" "$work/previous.json"
 rm "$work/output"
@@ -74,7 +79,7 @@ grep -Fxq changed=false "$work/output"
 sed -n 's/^matrix=//p' "$work/output" | jq -e '.include == []' >/dev/null
 rm "$work/output"
 bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json" "" true
-sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 3' >/dev/null
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 5' >/dev/null
 printf 'wrong json\n' > "$work/invalid.json"
 mkdir -p "$work/bad/packages/etcher"
 cp "$work/invalid.json" "$work/bad/packages/etcher/io.github.astrovm.Etcher.json"
@@ -102,7 +107,7 @@ bash "$updater" "$source_root" pinned "$work/output" "$work/legacy.json" "$root"
 grep -Fxq changed=false "$work/output"
 reset_source
 bash "$updater" "$source_root" pinned "$work/output" "$work/legacy.json"
-sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 3' >/dev/null
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 5' >/dev/null
 # Missing build inputs fail before either package is updated.
 reset_source
 rm "$source_root/scripts/ventoy-launch.sh"
@@ -114,9 +119,9 @@ fixtures
 bash "$updater" "$source_root" latest "$work/output" "$work/previous.json"
 grep -Fxq changed=true "$work/output"
 sed -n 's/^matrix=//p' "$work/output" | jq -e 'all(.include[]; .version == "99.0.1")' >/dev/null
-for package in etcher ventoy; do
+for package in etcher ventoy qtscrcpy uadng; do
   grep -q 'version="99.0.1" date="2026-10-08"' "$source_root/packages/$package/"*.metainfo.xml
-  jq -e '[.modules[].sources[] | select(.type == "archive")][0] | .sha256 == ("a"*64) and (.url | contains("/v99.0.1/"))' "$source_root/packages/$package/"*.json >/dev/null
+  jq -e --arg upstream "$(jq -r --arg package "$package" '.[] | select(.package == $package) | .upstream' "$root/packages/catalog.json")" '[.modules[].sources[] | select(.url? | strings | contains($upstream + "/releases/download/"))][0] | .sha256 == ("a"*64) and (.url | contains("/v99.0.1/"))' "$source_root/packages/$package/"*.json >/dev/null
 done
 cp "$source_root/packages/releases.json" "$work/previous.json"
 rm "$work/output"
@@ -173,6 +178,79 @@ expect_failure bash "$updater" "$source_root" latest "$work/output"
 grep -q 'Refusing to downgrade' "$work/error"
 assert_unchanged
 
+
+# Existing publications gain the two new apps without rebuilding either USB tool.
+reset_source
+jq '{etcher, ventoy}' "$work/pinned-previous.json" > "$work/old-apps.json"
+bash "$updater" "$source_root" pinned "$work/output" "$work/old-apps.json"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | map(.package) == ["qtscrcpy", "uadng"]' >/dev/null
+verify_package_versions "$source_root/packages/releases.json" "$work/old-apps.json"
+for package in qtscrcpy uadng; do
+  reset_source
+  printf '\n# changed input\n' >> "$source_root/scripts/$package-launch.sh"
+  bash "$updater" "$source_root" pinned "$work/output" "$work/pinned-previous.json"
+  sed -n 's/^matrix=//p' "$work/output" | jq -e --arg package "$package" '.include | length == 1 and .[0].package == $package' >/dev/null
+done
+# A dependency-only update selects both Android apps, preserving their versions.
+reset_source
+fixtures
+bash "$updater" "$source_root" latest "$work/output"
+cp "$source_root/packages/releases.json" "$work/dependency-previous.json"
+jq '.assets[0].digest = ("sha256:"+("c"*64))' "$work/adb.json" > "$work/new-adb.json"
+mv "$work/new-adb.json" "$work/adb.json"
+rm "$work/output"
+bash "$updater" "$source_root" latest "$work/output" "$work/dependency-previous.json"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | map(.package) == ["qtscrcpy", "uadng"] and all(.[]; .version == "99.0.1")' >/dev/null
+# Scheduled/latest migration also accepts new apps absent from the publication.
+reset_source
+fixtures
+jq '{etcher, ventoy}' "$work/dependency-previous.json" > "$work/old-latest.json"
+bash "$updater" "$source_root" latest "$work/output" "$work/old-latest.json"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | map(.package) == ["qtscrcpy", "uadng"]' >/dev/null
+# App-only upstream changes do not replace ADB or rebuild other apps.
+for package in qtscrcpy uadng; do
+  reset_source
+  fixtures
+  bash "$updater" "$source_root" latest "$work/output"
+  cp "$source_root/packages/releases.json" "$work/app-previous.json"
+  jq '.tag_name = "v99.0.2" | .assets[0].browser_download_url |= sub("/v99.0.1/"; "/v99.0.2/")' "$work/$package.json" > "$work/app-release.json"
+  if [ "$package" = qtscrcpy ]; then
+    jq '.assets[0].name |= sub("v99.0.1"; "v99.0.2") | .assets[0].browser_download_url |= sub("v99.0.1.AppImage"; "v99.0.2.AppImage")' "$work/app-release.json" > "$work/$package.json"
+  else
+    mv "$work/app-release.json" "$work/$package.json"
+  fi
+  rm "$work/output"
+  bash "$updater" "$source_root" latest "$work/output" "$work/app-previous.json"
+  sed -n 's/^matrix=//p' "$work/output" | jq -e --arg package "$package" '.include | length == 1 and .[0].package == $package and .[0].version == "99.0.2"' >/dev/null
+  jq -e '.adb.version == "99.0.1"' "$source_root/packages/releases.json" >/dev/null
+  jq -e '[.modules[].sources[] | select(.url? | strings | contains("Genymobile/scrcpy"))][0].url | contains("/v99.0.1/")' "$source_root/packages/$package/"*.json >/dev/null
+done
+jq '.adb.version = "0.0.1"' "$work/dependency-previous.json" > "$work/adb-downgrade.json"
+expect_failure verify_package_versions "$work/adb-downgrade.json" "$work/dependency-previous.json"
+# Malformed saved publications and removed entries stop publication.
+expect_failure verify_package_versions "$work/old-apps.json" "$work/dependency-previous.json"
+expect_failure verify_package_versions "$work/previous.json" "$work/invalid.json"
+reset_source
+expect_failure bash "$updater" "$source_root" latest "$work/output" "$work/invalid.json"
+assert_unchanged
+# File downloads count as primary releases, and dependencies cannot be overwritten.
+reset_source
+jq '.modules[0].sources += [.modules[0].sources[] | select(.url? | strings | contains("barry-ran/QtScrcpy"))]' "$source_root/packages/qtscrcpy/io.github.astrovm.QtScrcpy.json" > "$work/duplicate.json"
+mv "$work/duplicate.json" "$source_root/packages/qtscrcpy/io.github.astrovm.QtScrcpy.json"
+expect_failure bash "$updater" "$source_root" latest "$work/output"
+# A late dependency error leaves all earlier app recipes untouched.
+reset_source
+fixtures
+jq '.assets = []' "$work/adb.json" > "$work/new-adb.json"
+mv "$work/new-adb.json" "$work/adb.json"
+expect_failure bash "$updater" "$source_root" latest "$work/output"
+assert_unchanged
+matrix='{"include":[{"package":"qtscrcpy","id":"io.github.astrovm.QtScrcpy","arch":"x86_64"}]}'
+test "$(package_artifact_ref "$matrix" qtscrcpy-x86_64)" = app/io.github.astrovm.QtScrcpy/x86_64/master
+expect_failure package_artifact_ref "$matrix" uadng-x86_64
+expect_failure package_artifact_ref 'wrong' qtscrcpy-x86_64
+expect_failure package_artifact_ref '{"include":[]}' qtscrcpy-x86_64
+expect_failure package_artifact_ref "$(jq '.include += .include' <<< "$matrix")" qtscrcpy-x86_64
 
 # Partial publication accepts one Etcher artifact and rejects incomplete,
 # extra, corrupt or duplicate bundles before signing any repository changes.

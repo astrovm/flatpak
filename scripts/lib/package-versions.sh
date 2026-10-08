@@ -16,8 +16,11 @@ assert_package_version()
 verify_package_versions()
 {
   local proposed=$1 previous=$2 package old_version version
+  local -a packages
   if [ ! -f "$previous" ]; then return 0; fi
-  for package in etcher ventoy; do
+  jq -e 'type == "object" and length > 0' "$previous" >/dev/null || return 1
+  mapfile -t packages < <(jq -r 'keys[]' "$previous")
+  for package in "${packages[@]}"; do
     old_version=$(jq -er --arg package "$package" '.[$package].version' "$previous") || return 1
     version=$(jq -er --arg package "$package" '.[$package].version' "$proposed") || return 1
     assert_package_version "$package" "$old_version" "$version" || return 1
@@ -33,7 +36,7 @@ package_recipe_digest()
   manifest=$root/packages/$package/$id.json
   {
     jq -Sc . "$manifest" || return 1
-    mapfile -t sources < <(jq -r '.. | objects | select(.type? == "file") | .path' "$manifest")
+    mapfile -t sources < <(jq -r '.. | objects | select(.type? == "file" and has("path")) | .path' "$manifest")
     for source in "${sources[@]}"; do
       printf '%s\0' "$source"
       sha256sum < "$root/packages/$package/$source" || return 1
@@ -59,4 +62,11 @@ verify_package_artifacts()
     fi
     (cd "$artifact" && sha256sum --check SHA256SUMS) || return 1
   done
+}
+
+# Obtain the sole expected ref from the prepared, checksum-verified build plan.
+package_artifact_ref()
+{
+  local matrix=$1 artifact=$2
+  jq -er --arg artifact "$artifact" '[.include[] | select(.package + "-" + .arch == $artifact)] | select(length == 1) | .[0] | "app/" + .id + "/" + .arch + "/master"' <<< "$matrix"
 }

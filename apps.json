@@ -54,6 +54,32 @@
       ],
       "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
       "third_party": true
+    },
+    {
+      "repository": "barry-ran/QtScrcpy",
+      "id": "io.github.astrovm.QtScrcpy",
+      "name": "QtScrcpy",
+      "summary": "Display and control Android devices on your desktop.",
+      "bundle_prefix": "io.github.astrovm.QtScrcpy",
+      "branch": "master",
+      "architectures": [
+        "x86_64"
+      ],
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
+      "third_party": true
+    },
+    {
+      "repository": "Universal-Debloater-Alliance/universal-android-debloater-next-generation",
+      "id": "io.github.astrovm.UADng",
+      "name": "UAD-ng",
+      "summary": "Manage unwanted system apps on Android devices.",
+      "bundle_prefix": "io.github.astrovm.UADng",
+      "branch": "master",
+      "architectures": [
+        "x86_64"
+      ],
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo",
+      "third_party": true
     }
   ]
 }
