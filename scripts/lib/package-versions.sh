@@ -23,3 +23,40 @@ verify_package_versions()
     assert_package_version "$package" "$old_version" "$version" || return 1
   done
 }
+
+# Hash the manifest and every local source installed by it. Unrelated tools and
+# publication-only workflow edits do not change the built package.
+package_recipe_digest()
+{
+  local root=$1 package=$2 id=$3 manifest source
+  local -a sources
+  manifest=$root/packages/$package/$id.json
+  {
+    jq -Sc . "$manifest" || return 1
+    mapfile -t sources < <(jq -r '.. | objects | select(.type? == "file") | .path' "$manifest")
+    for source in "${sources[@]}"; do
+      printf '%s\0' "$source"
+      sha256sum < "$root/packages/$package/$source" || return 1
+    done
+  } | sha256sum | cut -d ' ' -f 1
+}
+
+# Validate exactly the selected artifacts before modifying the signed repo.
+verify_package_artifacts()
+{
+  local directory=$1 matrix=$2 artifact expected actual count
+  expected=$(jq -er '.include | map(.package + "-" + .arch) | sort | .[]' <<< "$matrix") || return 1
+  actual=$(find "$directory" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort)
+  if [ "$actual" != "$expected" ]; then
+    echo 'Build artifacts do not match selected packages' >&2
+    return 1
+  fi
+  for artifact in "$directory"/*; do
+    count=$(find "$artifact" -type f -name '*.flatpak' | wc -l)
+    if [ "$count" -ne 1 ]; then
+      echo 'Expected one bundle per selected architecture' >&2
+      return 1
+    fi
+    (cd "$artifact" && sha256sum --check SHA256SUMS) || return 1
+  done
+}
