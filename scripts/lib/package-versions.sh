@@ -29,13 +29,15 @@ verify_package_versions()
 package_recipe_digest()
 {
   local root=$1 package=$2 id=$3 manifest source
+  local -a sources
   manifest=$root/packages/$package/$id.json
   {
     jq -Sc . "$manifest" || return 1
-    while IFS= read -r source; do
+    mapfile -t sources < <(jq -r '.. | objects | select(.type? == "file") | .path' "$manifest")
+    for source in "${sources[@]}"; do
       printf '%s\0' "$source"
       sha256sum < "$root/packages/$package/$source" || return 1
-    done < <(jq -r '.. | objects | select(.type? == "file") | .path' "$manifest")
+    done
   } | sha256sum | cut -d ' ' -f 1
 }
 
