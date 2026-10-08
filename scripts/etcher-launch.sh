@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 umask 077
+unset ELECTRON_RUN_AS_NODE
 
 # The UI stays in Flatpak. Only this copy of the upstream writer runs on host.
 mkdir -p "$XDG_CACHE_HOME"

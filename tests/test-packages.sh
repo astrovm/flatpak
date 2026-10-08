@@ -37,6 +37,7 @@ echo "${MOCK_ARCH:-x86_64}"
 MOCK
 cat > "$work/bin/zypak-wrapper" <<'MOCK'
 #!/usr/bin/env bash
+test -z "${ELECTRON_RUN_AS_NODE:-}"
 test -x "$ETCHER_HOST_WRITER"
 test -x "$(dirname -- "$ETCHER_HOST_WRITER")/etcher-util"
 printf '%s\n' "$@" > "$CALLS"
@@ -59,7 +60,7 @@ assert_clean()
   test -z "$(find "$XDG_CACHE_HOME" -mindepth 1 -print -quit)"
 }
 
-bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'
+ELECTRON_RUN_AS_NODE=1 bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'
 grep -Fxq 'image with spaces.img' "$CALLS"
 assert_clean
 expect_failure env MOCK_STATUS=1 bash "$root/scripts/etcher-launch.sh"
