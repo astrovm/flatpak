@@ -36,6 +36,7 @@ reset_source()
 }
 fixtures()
 {
+  local package repository asset
   for package in etcher ventoy qtscrcpy uadng adb; do
     case "$package" in
       etcher) repository=balena-io/etcher; asset=balenaEtcher-linux-x64-99.0.1.zip ;;
