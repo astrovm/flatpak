@@ -52,6 +52,14 @@ env APP_REGISTRY="$published_registry" bash -c 'source "$1"; validate_app_regist
 public_key_file=$working_directory/astrovm.gpg
 cp "$site_directory/astrovm.gpg" "$public_key_file"
 
+# Render and verify without replacing the last working website.
+staged_site=$working_directory/site
+mkdir "$staged_site"
+ln -s "$site_directory/repo" "$staged_site/repo"
+env APP_REGISTRY="$published_registry" "$script_directory/render-site.sh" "$public_key_file" "$staged_site"
+env APP_REGISTRY="$published_registry" "$script_directory/verify-repository.sh" "$staged_site"
+rm "$staged_site/repo"
+
 find "$site_directory" \
   -mindepth 1 \
   -maxdepth 1 \
@@ -60,6 +68,4 @@ find "$site_directory" \
   ! -name usb-tools \
   -exec rm -rf -- {} +
 
-env APP_REGISTRY="$published_registry" "$script_directory/render-site.sh" "$public_key_file" "$site_directory"
-
-env APP_REGISTRY="$published_registry" "$script_directory/verify-repository.sh" "$site_directory"
+cp -a "$staged_site/." "$site_directory/"

@@ -59,9 +59,21 @@ passes arguments directly without evaluating upstream shell text. The recipe
 replaces the one `/usr/bin/pkexec` reference in Etcher's ASAR with the equal-length
 `/app/bin/pkexec` path, preserving ASAR offsets. The build also checks the upstream
 Linux elevation function against its reviewed checksum and stops if it changes.
-Image files under home and removable-media mounts are readable by the UI.
+The same build patch validates image metadata before it reaches selection state,
+registers the response listener before sending a request, and reports unreadable
+images through Etcher's image-open dialog. Both reviewed expressions are checked
+before patching; changed upstream code stops publication. Equal-length replacements
+preserve ASAR offsets, and the recipe refreshes the archive's integrity hashes.
+The exported desktop file registers the `etcher` URL scheme, so Etcher does not
+try to change host protocol settings from inside the sandbox.
+
+The launcher clears inherited AppImage variables and keeps Chromium's NSS database
+under the app's private data directory. The UI uses Wayland when available and
+falls back to X11. Image files under home and removable-media mounts are readable by the UI.
 The privileged writer opens the original host paths.
 
+Ventoy's release archive includes a leading `./` and a version directory. The
+recipe removes both and checks the GUI and companion-file paths before export.
 Ventoy's upstream GUI requires root. The launcher copies its payload to private
 temporary app storage, then starts the upstream host GUI. Ventoy handles the
 Polkit prompt. It uses the host GTK 3 libraries and X11 or XWayland; install GTK 3
@@ -76,7 +88,9 @@ provide libraries to processes that run on the host.
 ## CI and publication
 
 **Build USB tools** builds each package on its native architecture for relevant
-pull requests. Download its `.flatpak` artifacts and `SHA256SUMS` to test locally.
+pull requests. The built Etcher helper is also tested with synthetic raw and gzip
+images, truncated gzip data, and a missing file, without opening block devices.
+Download its `.flatpak` artifacts and `SHA256SUMS` to test locally.
 PR builds never use signing secrets or publish the repository.
 
 After merge, updates are automatic. The workflow checks GitHub's latest stable

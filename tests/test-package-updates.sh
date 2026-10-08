@@ -136,9 +136,11 @@ assert_unchanged
 # Execute the actual manifest patch against the reviewed upstream function.
 python3 - "$root" "$work" <<'PY'
 import json
+import hashlib
 from pathlib import Path
 import shlex
 import subprocess
+import struct
 import sys
 
 root, work = map(Path, sys.argv[1:])
@@ -146,15 +148,74 @@ manifest = json.loads((root / 'packages/etcher/io.github.astrovm.Etcher.json').r
 command = shlex.split(manifest['modules'][-1]['build-commands'][-1])
 archive = work / 'app.asar'
 code = command[-1].replace('/app/etcher/resources/app.asar', str(archive))
-upstream = (root / 'tests/fixtures/etcher-linux-elevation.txt').read_bytes()
+contents = (root / 'tests/fixtures/etcher-linux-elevation.txt').read_bytes()
+digest = hashlib.sha256(contents).hexdigest()
+header = json.dumps({'files': {'index.js': {'offset': '0', 'size': len(contents), 'integrity': {
+    'algorithm': 'SHA256', 'hash': digest, 'blockSize': 4194304, 'blocks': [digest],
+}}}}, separators=(',', ':')).encode()
+pickle_size = (4 + len(header) + 3) // 4 * 4
+upstream = struct.pack('<4I', 4, 4 + pickle_size, pickle_size, len(header)) + header + bytes(pickle_size - 4 - len(header)) + contents
 archive.write_bytes(upstream)
 subprocess.run(['python3', '-c', code], check=True)
 assert b'/app/bin/pkexec' in archive.read_bytes()
 assert b'/usr/bin/pkexec' not in archive.read_bytes()
+patched = archive.read_bytes()
+assert len(patched) == len(upstream), 'ASAR offsets must not move'
+patched_header = json.loads(patched[16:16 + len(header)])
+data_start = 8 + struct.unpack_from('<I', patched, 4)[0]
+assert patched_header['files']['index.js']['integrity']['hash'] == hashlib.sha256(patched[data_start:]).hexdigest()
+assert b'setAsDefaultProtocolClient' not in patched
+start = patched.index(b'(0,y.spawnChildAndConnect)')
+end = patched.index(b';let C=!1', start)
+fragment = patched[start:end].decode()
+node_test = r'''
+const assert = require('node:assert/strict');
+const vm = require('node:vm');
+const fs = require('node:fs');
+const fragment = fs.readFileSync(0, 'utf8');
+const handlers = {};
+let metadata;
+const t = {};
+const context = {
+  y: { spawnChildAndConnect: async () => ({
+    registerHandler: (name, callback) => { handlers[name] = callback; },
+    emit: (name) => {
+      if (name === 'sourceMetadata') {
+        // A fast local response must not race listener registration.
+        assert.equal(typeof handlers[name], 'function');
+        handlers[name](JSON.stringify(metadata));
+      }
+    },
+  }) },
+  t, h: { isFlashing: () => false }, p: { setDrives: () => {} },
+  o: { values: Object.values }, Error, JSON, Promise,
+};
+(async () => {
+  await vm.runInNewContext(fragment, context);
+  for (const path of ['image with spaces.img.gz', 'imagen-ñ-😀.img']) {
+    metadata = { path, extension: path.endsWith('gz') ? 'gz' : 'img', size: 1024 };
+    assert.deepEqual(await t.requestMetadata({ selected: path, SourceType: 'File' }), metadata);
+  }
+  for (metadata of [null, [], 42, "wrong", {}, { path: 'missing.img' }, { extension: 'gz' }]) {
+    await assert.rejects(t.requestMetadata({ selected: 'broken.img.gz', SourceType: 'File' }), /Cannot read image file/);
+  }
+})().catch(error => { console.error(error); process.exitCode = 1; });
+'''
+subprocess.run(['node', '-e', node_test], input=fragment, text=True, check=True)
 changed = upstream.replace(b'--disable-internal-agent', b'--changed-internal-agent')
 archive.write_bytes(changed)
 result = subprocess.run(['python3', '-c', code], capture_output=True, text=True)
 assert result.returncode != 0 and 'Etcher elevation contract changed' in result.stderr
+assert archive.read_bytes() == changed
+changed = upstream.replace(b't.requestMetadata=async', b't.requestMetadata=changed')
+archive.write_bytes(changed)
+result = subprocess.run(['python3', '-c', code], capture_output=True, text=True)
+assert result.returncode != 0 and 'Etcher image metadata contract changed' in result.stderr
+assert archive.read_bytes() == changed
+changed = upstream.replace(b'setAsDefaultProtocolClient', b'changedProtocolClient')
+archive.write_bytes(changed)
+result = subprocess.run(['python3', '-c', code], capture_output=True, text=True)
+assert result.returncode != 0 and 'Etcher protocol registration changed' in result.stderr
 assert archive.read_bytes() == changed
 PY
 echo 'ok - release updates are pinned, atomic, idempotent and reject malformed releases, downgrades and API failures'

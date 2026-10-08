@@ -180,6 +180,23 @@ h1 {
   gap: 1.5rem;
 }
 
+.catalog-group + .catalog-group {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--surface-soft);
+}
+
+.catalog-heading {
+  margin-bottom: 1rem;
+  font-family: var(--mono);
+  font-size: 1.3rem;
+}
+
+.catalog-note {
+  margin: -0.5rem 0 1.25rem;
+  color: var(--muted);
+}
+
 .app-card {
   display: flex;
   flex-direction: column;

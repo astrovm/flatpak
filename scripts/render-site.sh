@@ -54,6 +54,8 @@ render_app_icon()
 
   if [ -f "$output_directory/apps/$app_id/icon.svg" ]; then
     printf '<img class="%s" src="/apps/%s/icon.svg" alt="">' "$class_name" "$app_id"
+  elif [ -f "$output_directory/apps/$app_id/icon.png" ]; then
+    printf '<img class="%s" src="/apps/%s/icon.png" alt="">' "$class_name" "$app_id"
   else
     printf '<span class="%s app-icon-fallback" aria-hidden="true"></span>' "$class_name"
   fi
@@ -99,15 +101,26 @@ EOF
 
 render_index()
 {
-  local line repository
+  local line group label repository
   local -a repositories template_lines
 
-  mapfile -t repositories < <(app_repositories)
   mapfile -t template_lines < "$repository_root/templates/index.html"
   for line in "${template_lines[@]}"; do
     if [ "$line" = "          <!-- APP_CARDS -->" ]; then
-      for repository in "${repositories[@]}"; do
-        render_app_card "$repository"
+      for group in false true; do
+        mapfile -t repositories < <(jq -r --argjson third_party "$group" '.apps[] | select((.third_party // false) == $third_party) | .repository' "$APP_REGISTRY")
+        if [ "${#repositories[@]}" -eq 0 ]; then continue; fi
+        label="My apps"
+        if [ "$group" = true ]; then label="Third-party apps"; fi
+        printf '<section class="catalog-group" aria-label="%s"><h2 class="catalog-heading">%s</h2>\n' "$label" "$label"
+        if [ "$group" = true ]; then
+          printf '<p class="catalog-note">Unofficial Flatpak packages maintained by astro.</p>\n'
+        fi
+        printf '<div class="catalog-list">\n'
+        for repository in "${repositories[@]}"; do
+          render_app_card "$repository"
+        done
+        printf '</div></section>\n'
       done
     else
       line=${line//@STYLES_VERSION@/$stylesheet_version}

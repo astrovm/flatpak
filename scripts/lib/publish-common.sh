@@ -43,6 +43,7 @@ app_registry_is_valid()
               and length == (unique | length)
           )
           and (.runtime_repository | text and test("^https://"))
+          and ((has("third_party") | not) or (.third_party | type == "boolean"))
       )
       and (
         [.apps[].repository] as $values

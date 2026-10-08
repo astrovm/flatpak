@@ -20,6 +20,8 @@ on:
       - scripts/update-packages.sh
       - scripts/lib/package-versions.sh
       - tests/test-package-updates.sh
+      - tests/test-built-etcher.mjs
+      - tests/test-package-layouts.sh
       - tests/fixtures/**
       - .github/workflows/packages.yml
   workflow_dispatch:
@@ -106,6 +108,9 @@ jobs:
         run: |
           flatpak-builder --user --install-deps-from=flathub --assumeyes \
             --jobs=2 --repo=build-repo build "packages/$PACKAGE/$APP_ID.json"
+          if [ "$PACKAGE" = etcher ]; then
+            node tests/test-built-etcher.mjs build "packages/$PACKAGE/$APP_ID.json"
+          fi
           mkdir bundles
           flatpak build-bundle build-repo "bundles/$APP_ID-v$VERSION-$ARCH.flatpak" "$APP_ID" master
           (cd bundles && sha256sum ./*.flatpak > SHA256SUMS)
