@@ -1,0 +1,50 @@
+{
+  "app-id": "io.github.astrovm.Ventoy",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "50",
+  "sdk": "org.gnome.Sdk",
+  "command": "ventoy",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--talk-name=org.freedesktop.Flatpak"
+  ],
+  "modules": [
+    {
+      "name": "ventoy",
+      "buildsystem": "simple",
+      "build-commands": [
+        "install -Dm755 ventoy-launch.sh /app/bin/ventoy",
+        "install -Dm644 io.github.astrovm.Ventoy.desktop /app/share/applications/io.github.astrovm.Ventoy.desktop",
+        "install -Dm644 io.github.astrovm.Ventoy.metainfo.xml /app/share/metainfo/io.github.astrovm.Ventoy.metainfo.xml",
+        "install -Dm644 io.github.astrovm.Ventoy.png /app/share/icons/hicolor/256x256/apps/io.github.astrovm.Ventoy.png",
+        "install -d /app/ventoy",
+        "cp -a upstream/. /app/ventoy/"
+      ],
+      "sources": [
+        {
+          "type": "file",
+          "path": "../../scripts/ventoy-launch.sh"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.Ventoy.desktop"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.Ventoy.metainfo.xml"
+        },
+        {
+          "type": "file",
+          "path": "io.github.astrovm.Ventoy.png"
+        },
+        {
+          "type": "archive",
+          "url": "https://github.com/ventoy/Ventoy/releases/download/v1.1.17/ventoy-1.1.17-linux.tar.gz",
+          "sha256": "7fb4ed08cef6a6b4d39dd19260d8c80291a78dfdf9af7d461571e23cbbc43805",
+          "dest": "upstream"
+        }
+      ]
+    }
+  ]
+}

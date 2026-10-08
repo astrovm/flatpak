@@ -141,6 +141,12 @@ case "$1" in
   summary)
     [ -s "$repository/summary" ]
     ;;
+  remote)
+    if [ "$2" = summary ] && [ -n "${MOCK_BAD_SUMMARY_SIGNATURE:-}" ]; then
+      echo 'error: invalid repository summary signature' >&2
+      exit 1
+    fi
+    ;;
   *)
     exit 1
     ;;
@@ -227,6 +233,8 @@ refs_for_app()
 all_registered_refs=$(
   refs_for_app io.github.astrovm.AdventureMods master x86_64 aarch64
   refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64
+  refs_for_app io.github.astrovm.Etcher master x86_64
+  refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
 )
 
 # Release fixtures for AdventureMods v1.2.3.
@@ -268,8 +276,14 @@ seed_site()
 
   mkdir -p "$site/repo"
   printf '[core]\nmode=archive-z2\n' > "$site/repo/config"
-  refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64 > "$site/repo/refs-list"
+  {
+    refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64
+    refs_for_app io.github.astrovm.Etcher master x86_64
+    refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
+  } > "$site/repo/refs-list"
   mkdir -p "$site/.git"
+  mkdir -p "$site/usb-tools/packages"
+  printf '{"etcher":{"version":"2.1.7"}}\n' > "$site/usb-tools/packages/releases.json"
   printf 'stale\n' > "$site/stale.html"
 }
 
@@ -284,10 +298,11 @@ if ! grep -Fq "Verified signed Flatpak repository" "$temporary_directory/last-ou
     "$temporary_directory/last-output"; then
   fail "publishing did not report the imported bundles"
 fi
-if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 4 ] ||
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ] ||
   [ -e "$site/stale.html" ] || [ ! -d "$site/.git" ] ||
   [ "$(cat "$site/CNAME")" != "flatpak.4st.li" ] ||
   [ ! -f "$site/.nojekyll" ] ||
+  ! grep -Fq '2.1.7' "$site/usb-tools/packages/releases.json" ||
   ! grep -Fxq "public key for $FLATPAK_GPG_KEY_ID" "$site/astrovm.gpg"; then
   fail "published site content is incorrect"
 fi
@@ -317,6 +332,7 @@ if [ -e "$refreshed_site/stale.html" ] ||
   [ ! -s "$refreshed_site/index.html" ] ||
   [ ! -d "$refreshed_site/.git" ] ||
   [ "$(cat "$refreshed_site/CNAME")" != "flatpak.4st.li" ] ||
+  ! cmp -s "$site/usb-tools/packages/releases.json" "$refreshed_site/usb-tools/packages/releases.json" ||
   ! cmp -s "$temporary_directory/refs-before" "$refreshed_site/repo/refs-list" ||
   ! cmp -s "$temporary_directory/key-before" "$refreshed_site/astrovm.gpg"; then
   fail "refreshing changed the repository or left the old website behind"
@@ -339,7 +355,7 @@ expect_failure \
 fresh_site=$temporary_directory/fresh-site
 expect_failure \
   "a new repository must contain every registered application" \
-  "Repository is missing expected ref: app/io.github.astrovm.PkgDeck" \
+  "Repository is missing expected ref: app/io.github.astrovm." \
   "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$fresh_site"
 [ -s "$fresh_site/repo/config" ] || fail "a new repository was not initialized"
 pass "a new repository is initialized before validation"
@@ -646,7 +662,7 @@ pass "a failed publish leaves the previous website in place"
 expect_success \
   "publishing the same release again succeeds" \
   "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
-if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 4 ]; then
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ]; then
   fail "republishing changed the set of application refs"
 fi
 pass "republishing a release keeps exactly one ref per application and architecture"
@@ -664,6 +680,11 @@ if grep -Fq "Verified signed Flatpak repository" "$temporary_directory/last-outp
   fail "a corrupt repository was reported as verified"
 fi
 pass "a corrupt repository is not reported as verified"
+
+expect_failure \
+  "verification rejects a summary with an invalid signature" \
+  "invalid repository summary signature" \
+  env MOCK_BAD_SUMMARY_SIGNATURE=1 "$scripts/verify-repository.sh" "$site"
 
 rm -rf "$broken_site"
 cp -R "$site" "$broken_site"

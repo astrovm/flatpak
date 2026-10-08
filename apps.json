@@ -25,6 +25,31 @@
         "aarch64"
       ],
       "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+    },
+    {
+      "repository": "balena-io/etcher",
+      "id": "io.github.astrovm.Etcher",
+      "name": "balenaEtcher",
+      "summary": "Flash OS images to USB drives and SD cards.",
+      "bundle_prefix": "io.github.astrovm.Etcher",
+      "branch": "master",
+      "architectures": [
+        "x86_64"
+      ],
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
+    },
+    {
+      "repository": "ventoy/Ventoy",
+      "id": "io.github.astrovm.Ventoy",
+      "name": "Ventoy",
+      "summary": "Boot multiple ISO images from one USB drive.",
+      "bundle_prefix": "io.github.astrovm.Ventoy",
+      "branch": "master",
+      "architectures": [
+        "x86_64",
+        "aarch64"
+      ],
+      "runtime_repository": "https://dl.flathub.org/repo/flathub.flatpakrepo"
     }
   ]
 }

@@ -68,6 +68,15 @@ export XDG_CACHE_HOME=$client_directory/cache
 export XDG_DATA_HOME=$client_directory/data
 mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
 
+# A file:// Flatpak remote can skip summary authentication. Check it explicitly
+# with OSTree before trusting the fresh client's advertised refs.
+verification_repository=$client_directory/ostree
+ostree init --repo="$verification_repository" --mode=bare-user
+ostree remote add --repo="$verification_repository" \
+  --gpg-import="$site_directory/astrovm.gpg" --set=gpg-verify-summary=true \
+  verification "$repository_url"
+ostree remote summary --repo="$verification_repository" verification >/dev/null
+
 flatpak remote-add --user --if-not-exists astrovm-verification "$local_repository_file"
 
 while IFS= read -r arch; do
