@@ -10,6 +10,7 @@ on:
       - scripts/etcher-*.sh
       - scripts/ventoy-launch.sh
       - scripts/update-packages.sh
+      - scripts/lib/package-versions.sh
       - .github/workflows/packages.yml
   pull_request:
     paths:
@@ -17,6 +18,7 @@ on:
       - scripts/etcher-*.sh
       - scripts/ventoy-launch.sh
       - scripts/update-packages.sh
+      - scripts/lib/package-versions.sh
       - tests/test-package-updates.sh
       - tests/fixtures/**
       - .github/workflows/packages.yml
@@ -160,6 +162,9 @@ jobs:
           printf '%s\n' "$FLATPAK_GPG_PRIVATE_KEY" | gpg --batch --homedir "$signing_home" --import
           gpg --batch --homedir "$signing_home" --list-secret-keys "$FLATPAK_GPG_KEY_ID" >/dev/null
           source scripts/lib/publish-common.sh
+          source scripts/lib/package-versions.sh
+          # A newer upstream release may have finished while this run built.
+          verify_package_versions recipes/packages/releases.json site/usb-tools/packages/releases.json
           validate_app_registry
           restore_repository_directories site/repo
           ostree fsck --quiet --repo=site/repo

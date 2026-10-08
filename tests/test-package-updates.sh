@@ -20,8 +20,10 @@ esac
 MOCK
 chmod +x "$work/bin/gh"
 export PATH="$work/bin:$PATH"
-source_root=$work/source\ with\ spaces
+source_root="$work/source with spaces"
 updater=$root/scripts/update-packages.sh
+# shellcheck source=scripts/lib/package-versions.sh
+source "$root/scripts/lib/package-versions.sh"
 reset_source()
 {
   rm -rf "$source_root/packages"
@@ -62,6 +64,8 @@ bash "$updater" "$source_root" pinned "$work/output"
 grep -Fxq changed=true "$work/output"
 sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | length == 3' >/dev/null
 cp "$source_root/packages/releases.json" "$work/previous.json"
+verify_package_versions "$work/previous.json" "$work/missing.json"
+verify_package_versions "$work/previous.json" "$work/previous.json"
 rm "$work/output"
 bash "$updater" "$source_root" pinned "$work/output" "$work/previous.json"
 grep -Fxq changed=false "$work/output"
@@ -110,9 +114,15 @@ fixtures
 expect_failure env MOCK_API_FAILURE=true bash "$updater" "$source_root" latest "$work/output"
 assert_unchanged
 jq '.etcher.version = "99.0.2"' "$work/previous.json" > "$work/newer.json"
+expect_failure verify_package_versions "$work/previous.json" "$work/newer.json"
 expect_failure bash "$updater" "$source_root" latest "$work/output" "$work/newer.json"
 grep -q 'Refusing to downgrade' "$work/error"
 assert_unchanged
+expect_failure assert_package_version etcher wrong 1.0.0
+expect_failure assert_package_version etcher 1.0.0 wrong
+printf '{}\n' > "$work/missing-version.json"
+expect_failure verify_package_versions "$work/previous.json" "$work/missing-version.json"
+expect_failure verify_package_versions "$work/missing-version.json" "$work/previous.json"
 printf 'not json\n' > "$work/etcher.json"
 expect_failure bash "$updater" "$source_root" latest "$work/output"
 assert_unchanged
@@ -136,7 +146,7 @@ manifest = json.loads((root / 'packages/etcher/io.github.astrovm.Etcher.json').r
 command = shlex.split(manifest['modules'][-1]['build-commands'][-1])
 archive = work / 'app.asar'
 code = command[-1].replace('/app/etcher/resources/app.asar', str(archive))
-upstream = (root / 'tests/fixtures/etcher-linux-elevation.js').read_bytes()
+upstream = (root / 'tests/fixtures/etcher-linux-elevation.txt').read_bytes()
 archive.write_bytes(upstream)
 subprocess.run(['python3', '-c', code], check=True)
 assert b'/app/bin/pkexec' in archive.read_bytes()

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Resolve stable upstream releases into checksum-pinned, reproducible recipes.
 set -euo pipefail
+script_directory=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=scripts/lib/package-versions.sh
+source "$script_directory/lib/package-versions.sh"
 root=${1:-}
 mode=${2:-}
 output=${3:-}
@@ -47,10 +50,7 @@ JQ
     if [ -f "$previous" ]; then
       old_version=$(jq -er --arg package "$package" '.[$package].version' "$previous")
     fi
-    if [ "$(printf '%s\n' "$old_version" "$version" | sort -V | tail -1)" != "$version" ]; then
-      echo "Refusing to downgrade $package from $old_version to $version" >&2
-      exit 1
-    fi
+    assert_package_version "$package" "$old_version" "$version"
     jq --slurpfile release "$work/resolved.json" '(.modules[].sources[] | select(.type == "archive")) |= (.url = $release[0].url | .sha256 = $release[0].sha256)' "$manifest" > "$work/manifest.json"
     mv "$work/manifest.json" "$manifest"
     release_date=$(jq -r .date "$work/resolved.json")
