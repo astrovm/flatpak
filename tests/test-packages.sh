@@ -43,6 +43,7 @@ echo "${MOCK_ARCH:-x86_64}"
 MOCK
 cat > "$work/bin/zypak-wrapper" <<'MOCK'
 #!/usr/bin/env bash
+set -e
 test -z "${ELECTRON_RUN_AS_NODE:-}"
 test -z "${APPIMAGE:-}"
 test -z "${APPDIR:-}"
