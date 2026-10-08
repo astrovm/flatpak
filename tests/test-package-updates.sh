@@ -201,6 +201,12 @@ mv "$work/new-adb.json" "$work/adb.json"
 rm "$work/output"
 bash "$updater" "$source_root" latest "$work/output" "$work/dependency-previous.json"
 sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | map(.package) == ["qtscrcpy", "uadng"] and all(.[]; .version == "99.0.1")' >/dev/null
+# Scheduled/latest migration also accepts new apps absent from the publication.
+reset_source
+fixtures
+jq '{etcher, ventoy}' "$work/dependency-previous.json" > "$work/old-latest.json"
+bash "$updater" "$source_root" latest "$work/output" "$work/old-latest.json"
+sed -n 's/^matrix=//p' "$work/output" | jq -e '.include | map(.package) == ["qtscrcpy", "uadng"]' >/dev/null
 # App-only upstream changes do not replace ADB or rebuild other apps.
 for package in qtscrcpy uadng; do
   reset_source
