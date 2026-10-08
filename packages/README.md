@@ -76,6 +76,12 @@ and the privileged host writer. Document-portal FUSE paths can be inaccessible
 to a separate host process. The package already grants read access to home,
 `/media`, and `/run/media`; the picker does not grant access to other locations.
 
+Drive discovery uses the runtime's `lsblk` through a small pipe wrapper. Node
+normally captures subprocess output with Unix sockets, which some host AppArmor
+`lsblk` profiles reject on inheritance. The wrapper gives `lsblk` ordinary pipes
+and `/dev/null` input, preserving its arguments, stdout, stderr and exit status.
+It keeps the host's AppArmor profile active and needs no extra sandbox permission.
+
 Ventoy's release archive includes a leading `./` and a version directory. The
 recipe removes both and checks the GUI and companion-file paths before export.
 Ventoy's upstream GUI requires root. The launcher copies its payload to private

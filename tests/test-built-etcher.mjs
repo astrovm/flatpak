@@ -8,9 +8,32 @@ import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { gzipSync } from 'node:zlib';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 const [build, manifest] = process.argv.slice(2);
 assert.ok(build && manifest, 'usage: node tests/test-built-etcher.mjs <build> <manifest>');
+// Exercise the real runtime command with Node's socket-backed subprocess I/O.
+// Listing column names does not probe or open block devices.
+const helperEnv = { PATH: process.env.PATH, HOME: os.homedir(), LANG: 'C.UTF-8',
+  ...(process.env.FLATPAK_USER_DIR ? { FLATPAK_USER_DIR: process.env.FLATPAK_USER_DIR } : {}) };
+const checkScanner = `
+const assert = require('node:assert/strict');
+const run = require('node:util').promisify(require('node:child_process').execFile);
+(async () => {
+  const { stdout, stderr } = await run('/app/bin/lsblk', ['--list-columns', '--json']);
+  assert.ok(JSON.parse(stdout).columns.some(column => column.name === 'NAME'));
+  assert.equal(stderr, '');
+  await assert.rejects(run('/app/bin/lsblk', ['--etcher-invalid-option']), error => {
+    assert.equal(error.code, 1);
+    assert.match(error.stderr, /unrecognized option/);
+    return true;
+  });
+})().catch(error => { console.error(error); process.exitCode = 1; });
+`;
+await promisify(execFile)('flatpak-builder', ['--run', '--env=PKG_EXECPATH=PKG_INVOKE_NODEJS',
+  build, manifest, '/app/etcher/resources/etcher-util', '-e', checkScanner], { env: helperEnv });
+console.log('Packaged scanner command captures JSON and preserves invalid-option errors');
 const work = await mkdtemp(path.join(os.tmpdir(), 'etcher-metadata-'));
 const listener = net.createServer();
 listener.listen(0, '127.0.0.1');
@@ -27,8 +50,7 @@ const child = spawn('flatpak-builder', ['--run', `--filesystem=${work}:ro`, '--s
   '/app/etcher/resources/etcher-util', `--ETCHER_SERVER_PORT=${port}`, '--ETCHER_SERVER_ADDRESS=127.0.0.1', '--ETCHER_TERMINATE_TIMEOUT=30000'], {
   stdio: 'ignore',
   // The upstream helper prints its environment; avoid passing CI credentials.
-  env: { PATH: process.env.PATH, HOME: os.homedir(), LANG: 'C.UTF-8',
-    ...(process.env.FLATPAK_USER_DIR ? { FLATPAK_USER_DIR: process.env.FLATPAK_USER_DIR } : {}) },
+  env: helperEnv,
 });
 let socket;
 try {

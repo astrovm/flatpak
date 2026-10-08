@@ -33,6 +33,7 @@
       "buildsystem": "simple",
       "build-commands": [
         "install -Dm755 etcher-launch.sh /app/bin/etcher",
+        "install -Dm755 etcher-lsblk.sh /app/bin/lsblk",
         "install -Dm644 io.github.astrovm.Etcher.desktop /app/share/applications/io.github.astrovm.Etcher.desktop",
         "install -Dm644 io.github.astrovm.Etcher.metainfo.xml /app/share/metainfo/io.github.astrovm.Etcher.metainfo.xml",
         "install -Dm644 io.github.astrovm.Etcher.png /app/share/icons/hicolor/256x256/apps/io.github.astrovm.Etcher.png",
@@ -46,6 +47,10 @@
         {
           "type": "file",
           "path": "../../scripts/etcher-launch.sh"
+        },
+        {
+          "type": "file",
+          "path": "../../scripts/etcher-lsblk.sh"
         },
         {
           "type": "file",
