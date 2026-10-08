@@ -108,7 +108,7 @@ printf '%s\n' \
   > "$ostree_mock_directory/ostree"
 chmod +x "$ostree_mock_directory/ostree"
 
-registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.PkgDeck/aarch64/master\napp/io.github.astrovm.PkgDeck/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable'
+registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.Etcher/x86_64/master\napp/io.github.astrovm.PkgDeck/aarch64/master\napp/io.github.astrovm.PkgDeck/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable\napp/io.github.astrovm.Ventoy/aarch64/master\napp/io.github.astrovm.Ventoy/x86_64/master'
 # The subshell expands its own positional parameter.
 # shellcheck disable=SC2016
 expect_success \
