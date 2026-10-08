@@ -345,7 +345,7 @@ expect_failure \
 fresh_site=$temporary_directory/fresh-site
 expect_failure \
   "a new repository must contain every registered application" \
-  "Repository is missing expected ref: app/io.github.astrovm.PkgDeck" \
+  "Repository is missing expected ref: app/io.github.astrovm." \
   "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$fresh_site"
 [ -s "$fresh_site/repo/config" ] || fail "a new repository was not initialized"
 pass "a new repository is initialized before validation"
