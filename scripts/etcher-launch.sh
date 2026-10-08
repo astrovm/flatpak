@@ -3,16 +3,34 @@ set -euo pipefail
 umask 077
 unset ELECTRON_RUN_AS_NODE APPIMAGE APPDIR ARGV0
 
-# Chromium needs writable private storage for its NSS database. Keep the
-# original home as the file picker's starting location before changing HOME.
+# Chromium needs writable private storage for its NSS database. Resolve the
+# desktop folders against the real home before moving HOME to private storage.
 export OWD=${OWD:-$HOME}
-mkdir -p "$XDG_DATA_HOME"
+mkdir -p "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME"
+writer_directory=$(mktemp -d "$XDG_CACHE_HOME/etcher-writer.XXXXXX")
+trap 'rm -rf -- "$writer_directory"' EXIT
+config_directory=$(mktemp -d "$XDG_CACHE_HOME/etcher-config.XXXXXX")
+trap 'rm -rf -- "$writer_directory" "$config_directory"' EXIT
+# Flatpak's user-dirs.dirs is read-only. Mirror the other app settings so their
+# changes still persist, and provide GTK with an absolute-path directory file.
+shopt -s nullglob dotglob
+for entry in "$XDG_CONFIG_HOME"/*; do
+  if [[ ${entry##*/} != user-dirs.dirs ]]; then
+    ln -s -- "$entry" "$config_directory/"
+  fi
+done
+for category in DESKTOP DOWNLOAD TEMPLATES PUBLICSHARE DOCUMENTS MUSIC PICTURES VIDEOS; do
+  folder=$(xdg-user-dir "$category")
+  folder=${folder//\\/\\\\}
+  folder=${folder//\"/\\\"}
+  folder=${folder//\$/\\\$}
+  folder=${folder//\`/\\\`}
+  printf 'XDG_%s_DIR="%s"\n' "$category" "$folder" >> "$config_directory/user-dirs.dirs"
+done
+export XDG_CONFIG_HOME=$config_directory
 export HOME=$XDG_DATA_HOME
 
 # The UI stays in Flatpak. Only this copy of the upstream writer runs on host.
-mkdir -p "$XDG_CACHE_HOME"
-writer_directory=$(mktemp -d "$XDG_CACHE_HOME/etcher-writer.XXXXXX")
-trap 'rm -rf -- "$writer_directory"' EXIT
 cp /app/etcher/resources/etcher-util "$writer_directory/etcher-util"
 cp /app/libexec/etcher-host-writer "$writer_directory/writer"
 chmod 700 "$writer_directory/etcher-util" "$writer_directory/writer"
