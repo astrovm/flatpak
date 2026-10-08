@@ -22,7 +22,7 @@ const assert = require('node:assert/strict');
 const run = require('node:util').promisify(require('node:child_process').execFile);
 (async () => {
   const { stdout, stderr } = await run('/app/bin/lsblk', ['--list-columns', '--json']);
-  assert.ok(JSON.parse(stdout).columns.some(column => column.name === 'NAME'));
+  assert.ok(JSON.parse(stdout)['lsblk-columns'].some(column => column.holder === 'NAME'));
   assert.equal(stderr, '');
   await assert.rejects(run('/app/bin/lsblk', ['--etcher-invalid-option']), error => {
     assert.equal(error.code, 1);

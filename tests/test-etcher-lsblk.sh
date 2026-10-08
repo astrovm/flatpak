@@ -23,7 +23,7 @@ MOCK
 chmod +x "$work/lsblk"
 sed "s|/usr/bin/lsblk|$work/lsblk|" "${ETCHER_LSBLK_SCRIPT:-$root/scripts/etcher-lsblk.sh}" > "$work/wrapper"
 
-node --input-type=module - "$work/wrapper" <<'JS'
+node --input-type=module - "$work/wrapper" "${ETCHER_LSBLK_SCRIPT:-$root/scripts/etcher-lsblk.sh}" <<'JS'
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -38,6 +38,15 @@ await assert.rejects(run('bash', [wrapper, '--fail']), error => {
   assert.equal(error.code, 42);
   assert.equal(error.stdout, '');
   assert.equal(error.stderr, 'scanner diagnostic\n');
+  return true;
+});
+// Run the unchanged production file too, including under the coverage tracer.
+const { stdout, stderr } = await run('bash', [process.argv[3], '--list-columns', '--json']);
+assert.ok(JSON.parse(stdout)['lsblk-columns'].some(column => column.holder === 'NAME'));
+assert.equal(stderr, '');
+await assert.rejects(run('bash', [process.argv[3], '--etcher-invalid-option']), error => {
+  assert.equal(error.code, 1);
+  assert.match(error.stderr, /unrecognized option/);
   return true;
 });
 JS
