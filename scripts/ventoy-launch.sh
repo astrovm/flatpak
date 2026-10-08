@@ -8,6 +8,7 @@ case "$(uname -m)" in
   *) echo 'Unsupported Ventoy architecture' >&2; exit 1 ;;
 esac
 mkdir -p "$XDG_CACHE_HOME" "$XDG_CONFIG_HOME"
+mkdir -p "$XDG_CACHE_HOME/ventoy" "$XDG_CONFIG_HOME/ventoy"
 payload_directory=$(mktemp -d "$XDG_CACHE_HOME/ventoy.XXXXXX")
 trap 'rm -rf -- "$payload_directory"' EXIT
 cp -a /app/ventoy/. "$payload_directory/"

@@ -5,6 +5,7 @@
   "sdk": "org.gnome.Sdk",
   "command": "etcher",
   "finish-args": [
+    "--unset-env=ELECTRON_RUN_AS_NODE",
     "--share=ipc",
     "--socket=x11",
     "--talk-name=org.freedesktop.Flatpak",

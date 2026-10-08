@@ -57,7 +57,7 @@ expect_failure()
 }
 assert_clean()
 {
-  test -z "$(find "$XDG_CACHE_HOME" -mindepth 1 -print -quit)"
+  test -z "$(find "$XDG_CACHE_HOME" -mindepth 1 ! -path "$XDG_CACHE_HOME/ventoy" -print -quit)"
 }
 
 ELECTRON_RUN_AS_NODE=1 bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'

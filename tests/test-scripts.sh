@@ -141,6 +141,12 @@ case "$1" in
   summary)
     [ -s "$repository/summary" ]
     ;;
+  remote)
+    if [ "$2" = summary ] && [ -n "${MOCK_BAD_SUMMARY_SIGNATURE:-}" ]; then
+      echo 'error: invalid repository summary signature' >&2
+      exit 1
+    fi
+    ;;
   *)
     exit 1
     ;;
@@ -670,6 +676,11 @@ if grep -Fq "Verified signed Flatpak repository" "$temporary_directory/last-outp
   fail "a corrupt repository was reported as verified"
 fi
 pass "a corrupt repository is not reported as verified"
+
+expect_failure \
+  "verification rejects a summary with an invalid signature" \
+  "invalid repository summary signature" \
+  env MOCK_BAD_SUMMARY_SIGNATURE=1 "$scripts/verify-repository.sh" "$site"
 
 rm -rf "$broken_site"
 cp -R "$site" "$broken_site"
