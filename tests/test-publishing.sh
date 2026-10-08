@@ -86,7 +86,7 @@ expect_success \
     source "$1"
     validate_app_registry
     validate_source_repository "astrovm/TestApp"
-    [ "$(all_expected_refs | wc -l)" -eq 8 ]
+    [ "$(all_expected_refs | wc -l)" -eq 10 ]
   ' \
   _ \
   "$repository_root/scripts/lib/publish-common.sh"
@@ -114,7 +114,7 @@ printf '%s\n' \
   > "$ostree_mock_directory/ostree"
 chmod +x "$ostree_mock_directory/ostree"
 
-registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.Etcher/x86_64/master\napp/io.github.astrovm.PkgDeck/aarch64/master\napp/io.github.astrovm.PkgDeck/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable\napp/io.github.astrovm.Ventoy/aarch64/master\napp/io.github.astrovm.Ventoy/x86_64/master'
+registered_refs=$'app/io.github.astrovm.AdventureMods/aarch64/master\napp/io.github.astrovm.AdventureMods/x86_64/master\napp/io.github.astrovm.Etcher/x86_64/master\napp/io.github.astrovm.PkgDeck/aarch64/master\napp/io.github.astrovm.PkgDeck/x86_64/master\napp/io.github.astrovm.QtScrcpy/x86_64/master\napp/io.github.astrovm.TestApp/x86_64/stable\napp/io.github.astrovm.UADng/x86_64/master\napp/io.github.astrovm.Ventoy/aarch64/master\napp/io.github.astrovm.Ventoy/x86_64/master'
 # The subshell expands its own positional parameter.
 # shellcheck disable=SC2016
 expect_success \
@@ -641,7 +641,9 @@ expected_per_arch_refs='x86_64:
 app/io.github.astrovm.AdventureMods/x86_64/master
 app/io.github.astrovm.Etcher/x86_64/master
 app/io.github.astrovm.PkgDeck/x86_64/master
+app/io.github.astrovm.QtScrcpy/x86_64/master
 app/io.github.astrovm.TestApp/x86_64/stable
+app/io.github.astrovm.UADng/x86_64/master
 app/io.github.astrovm.Ventoy/x86_64/master
 aarch64:
 app/io.github.astrovm.AdventureMods/aarch64/master
@@ -662,7 +664,7 @@ jq '.apps |= reverse' "$multi_app_registry" > "$temporary_directory/reversed-app
 # shellcheck disable=SC2016
 reversed_refs=$(env APP_REGISTRY="$temporary_directory/reversed-apps.json" \
   bash -c 'source "$1"; expected_refs_for_arch x86_64' _ "$library")
-if [ "$reversed_refs" != "$(sed -n '2,6p' <<< "$expected_per_arch_refs")" ]; then
+if [ "$reversed_refs" != "$(sed -n '2,8p' <<< "$expected_per_arch_refs")" ]; then
   printf 'not ok - refs are not sorted independently of registry order:\n%s\n' "$reversed_refs" >&2
   exit 1
 fi

@@ -10,7 +10,8 @@ The repository for apps published by [astrovm](https://github.com/astrovm), serv
 - [PkgDeck](https://flatpak.4st.li/apps/io.github.astrovm.PkgDeck/install/)
 
 This repo also builds unofficial **balenaEtcher 2.1.7** (x86_64) and
-**Ventoy 1.1.17** (x86_64 and aarch64). See [the build and host bridge notes](packages/README.md).
+**Ventoy 1.1.17** (x86_64 and aarch64), **QtScrcpy 4.2.1** and **UAD-ng 1.2.0**
+(both x86_64). See [the build and host bridge notes](packages/README.md).
 These tools require host administrator access for disk operations.
 
 ## ⬇️ Install
@@ -56,7 +57,7 @@ configured architecture in an immutable GitHub release, then sends a
 }
 ```
 
-Etcher and Ventoy use the separate **Build USB tools** workflow because their
+Third-party apps use the separate **Build third-party apps** workflow because their
 upstream releases do not contain Flatpak bundles. It checks for stable releases
 daily at 09:43 UTC, builds changed releases, and publishes them automatically
 with the existing signing key after validation. Relevant changes merged to

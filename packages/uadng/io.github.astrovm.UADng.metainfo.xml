@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.astrovm.UADng</id>
+  <name>UAD-ng</name>
+  <summary>Manage unwanted system apps on Android devices</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="io.github.universal-debloater-alliance"><name>Universal-Debloater-Alliance</name></developer>
+  <description>
+    <p>Browse Android system packages, read removal recommendations, and disable or restore apps using ADB.</p>
+    <p>This unofficial package is maintained by astrovm. Enable USB debugging on your Android device and approve the computer when prompted.</p>
+  </description>
+  <launchable type="desktop-id">io.github.astrovm.UADng.desktop</launchable>
+  <url type="homepage">https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation</url>
+  <url type="bugtracker">https://github.com/astrovm/flatpak/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="1.2.0" date="2026-01-12"/></releases>
+</component>

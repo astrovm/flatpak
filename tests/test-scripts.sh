@@ -234,6 +234,8 @@ all_registered_refs=$(
   refs_for_app io.github.astrovm.AdventureMods master x86_64 aarch64
   refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64
   refs_for_app io.github.astrovm.Etcher master x86_64
+    refs_for_app io.github.astrovm.QtScrcpy master x86_64
+    refs_for_app io.github.astrovm.UADng master x86_64
   refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
 )
 
@@ -279,6 +281,8 @@ seed_site()
   {
     refs_for_app io.github.astrovm.PkgDeck master x86_64 aarch64
     refs_for_app io.github.astrovm.Etcher master x86_64
+    refs_for_app io.github.astrovm.QtScrcpy master x86_64
+    refs_for_app io.github.astrovm.UADng master x86_64
     refs_for_app io.github.astrovm.Ventoy master x86_64 aarch64
   } > "$site/repo/refs-list"
   mkdir -p "$site/.git"
@@ -298,7 +302,7 @@ if ! grep -Fq "Verified signed Flatpak repository" "$temporary_directory/last-ou
     "$temporary_directory/last-output"; then
   fail "publishing did not report the imported bundles"
 fi
-if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ] ||
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 9 ] ||
   [ -e "$site/stale.html" ] || [ ! -d "$site/.git" ] ||
   [ "$(cat "$site/CNAME")" != "flatpak.4st.li" ] ||
   [ ! -f "$site/.nojekyll" ] ||
@@ -378,12 +382,12 @@ class Catalog(HTMLParser):
 
 catalog = Catalog()
 catalog.feed((site / 'index.html').read_text())
-assert len(catalog.apps) == len(catalog.icons) == 4
-for name, group in [('AdventureMods', 'My apps'), ('PkgDeck', 'My apps'), ('Etcher', 'Third-party apps'), ('Ventoy', 'Third-party apps')]:
+assert len(catalog.apps) == len(catalog.icons) == 6
+for name, group in [('AdventureMods', 'My apps'), ('PkgDeck', 'My apps'), ('Etcher', 'Third-party apps'), ('Ventoy', 'Third-party apps'), ('QtScrcpy', 'Third-party apps'), ('UADng', 'Third-party apps')]:
     assert catalog.apps[f'io.github.astrovm.{name}'] == group
 for icon in catalog.icons:
     assert (site / icon.lstrip('/')).stat().st_size > 0
-for name in ('Etcher', 'Ventoy'):
+for name in ('Etcher', 'Ventoy', 'QtScrcpy', 'UADng'):
     page = site / 'apps' / f'io.github.astrovm.{name}' / 'install/index.html'
     assert f'/apps/io.github.astrovm.{name}/icon.png' in page.read_text()
 PY
@@ -761,7 +765,7 @@ pass "a failed publish leaves the previous website in place"
 expect_success \
   "publishing the same release again succeeds" \
   "$scripts/publish.sh" astrovm/AdventureMods v1.2.3 "$site"
-if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 7 ]; then
+if [ "$(sort -u "$site/repo/refs-list" | grep -c '^app/')" -ne 9 ]; then
   fail "republishing changed the set of application refs"
 fi
 pass "republishing a release keeps exactly one ref per application and architecture"
