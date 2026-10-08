@@ -66,9 +66,16 @@ try {
   }
   console.log('Packaged Etcher reads raw/gzip images and rejects corrupt/missing images');
 } finally {
+  const exited = once(child, 'exit');
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'terminate', payload: {} }));
+  }
+  await Promise.race([exited, delay(2000)]);
   socket?.close();
-  child.kill('SIGTERM');
-  await Promise.race([once(child, 'exit'), delay(2000)]);
+  if (child.exitCode === null) {
+    child.kill('SIGTERM');
+    await Promise.race([exited, delay(2000)]);
+  }
   if (child.exitCode === null) child.kill('SIGKILL');
   await rm(work, { recursive: true, force: true });
 }
