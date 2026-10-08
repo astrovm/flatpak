@@ -12,7 +12,9 @@ export ORIGINAL_HOME=$work/home
 export HOME=$ORIGINAL_HOME
 mkdir -p "$HOME/Documents" "$HOME/Downloads" "$XDG_CONFIG_HOME/balenaEtcher"
 printf 'saved settings\n' > "$XDG_CONFIG_HOME/balenaEtcher/config.json"
+# shellcheck disable=SC2016
 printf 'XDG_DOCUMENTS_DIR="$HOME/Documents"\nXDG_DOWNLOAD_DIR="$HOME/Downloads"\n' > "$XDG_CONFIG_HOME/user-dirs.dirs"
+export CONFIG_CAPTURE=$work/config-capture
 export CALLS=$work/calls
 export PATH="$work/bin:$PATH"
 export MOCK_APP_DIRECTORY=$work/app
@@ -59,6 +61,7 @@ test -w "$HOME"
 test "$(xdg-user-dir DOCUMENTS)" = "$ORIGINAL_HOME/Documents"
 test "$(xdg-user-dir DOWNLOAD)" = "$ORIGINAL_HOME/Downloads"
 test "$XDG_CONFIG_HOME" != "$ORIGINAL_CONFIG_HOME"
+printf '%s\n' "$XDG_CONFIG_HOME" > "$CONFIG_CAPTURE"
 test -L "$XDG_CONFIG_HOME/balenaEtcher"
 test "$(cat "$XDG_CONFIG_HOME/balenaEtcher/config.json")" = 'saved settings'
 printf 'updated settings\n' > "$XDG_CONFIG_HOME/balenaEtcher/config.json"
@@ -87,6 +90,9 @@ expect_failure()
 assert_clean()
 {
   test -z "$(find "$XDG_CACHE_HOME" -mindepth 1 ! -path "$XDG_CACHE_HOME/ventoy" -print -quit)"
+  if [[ -f "$CONFIG_CAPTURE" ]]; then
+    test ! -e "$(cat "$CONFIG_CAPTURE")"
+  fi
 }
 
 ELECTRON_RUN_AS_NODE=1 APPIMAGE=/another-app APPDIR=/another-dir ARGV0=/another-app bash "$root/scripts/etcher-launch.sh" 'image with spaces.img'
