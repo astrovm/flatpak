@@ -1,0 +1,206 @@
+# Third-party apps
+
+Unofficial Flatpak packages maintained by astrovm. The application binaries and
+icons come from [balenaEtcher](https://github.com/balena-io/etcher/releases/tag/v2.1.7)
+and [Ventoy](https://github.com/ventoy/Ventoy/releases/tag/v1.1.17).
+The Android tools are described below.
+These recipes package upstream release binaries; they do not compile the apps
+from source. Downloads have pinned SHA-256 checksums.
+
+| App | Version | Architectures | App ID |
+| --- | --- | --- | --- |
+| balenaEtcher | 2.1.7 | x86_64 | `io.github.astrovm.Etcher` |
+| Ventoy | 1.1.17 | x86_64, aarch64 | `io.github.astrovm.Ventoy` |
+| QtScrcpy | 4.2.1 | x86_64 | `io.github.astrovm.QtScrcpy` |
+| UAD-ng | 1.2.0 | x86_64 | `io.github.astrovm.UADng` |
+
+## Build locally
+
+Install `flatpak`, `flatpak-builder`, and `git-lfs` with your distribution's package
+manager. Add the build runtime source once:
+
+```sh
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
+Build one package on the matching native architecture:
+
+```sh
+flatpak-builder --user --install-deps-from=flathub --assumeyes --jobs=2 \
+  --repo=build-repo build-etcher packages/etcher/io.github.astrovm.Etcher.json
+flatpak build-bundle build-repo Etcher-v2.1.7-x86_64.flatpak io.github.astrovm.Etcher master
+
+flatpak-builder --user --install-deps-from=flathub --assumeyes --jobs=2 \
+  --repo=build-repo build-ventoy packages/ventoy/io.github.astrovm.Ventoy.json
+flatpak build-bundle build-repo Ventoy-v1.1.17-x86_64.flatpak io.github.astrovm.Ventoy master
+```
+
+For ARM64 Ventoy, use an aarch64 machine and change the bundle's architecture
+suffix. Etcher's upstream Linux release has no aarch64 binary.
+
+Install the GNOME 50 platform before installing a local unsigned bundle:
+
+```sh
+flatpak install --user flathub org.gnome.Platform//50
+flatpak install --user ./Etcher-v2.1.7-x86_64.flatpak
+flatpak run io.github.astrovm.Etcher
+```
+
+## Android tools
+
+Build the Android apps with the same command, using
+`packages/qtscrcpy/io.github.astrovm.QtScrcpy.json` or
+`packages/uadng/io.github.astrovm.UADng.json` as the manifest.
+
+[QtScrcpy 4.2.1](https://github.com/barry-ran/QtScrcpy/releases/tag/v4.2.1)
+is extracted from the official Linux AppImage without FUSE. Its bundled Qt 5
+libraries, plugins, keymaps and scrcpy server are retained. The release lacks
+its Qt Wayland client library, so this package uses X11 or XWayland. The launcher
+keeps Flatpak’s graphics-driver library path available for screen rendering. The old bundled ADB
+is replaced with ADB 37.0.1 from the official
+[scrcpy 5.0.1 Linux release](https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1).
+Both Android apps use this dependency. Its archive and the ADB Apache notice are
+included in the recipe; automatic dependency updates rebuild both Android apps.
+
+[UAD-ng 1.2.0](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/releases/tag/v1.2.0)
+uses the official `noselfupdate` binary. Flatpak owns application updates.
+Upstream package-description downloads remain enabled. Settings and caches use
+Flatpak's private XDG directories. Selection exports and CSV backups are saved
+in `~/.var/app/io.github.astrovm.UADng/data/uad-ng/`.
+QtScrcpy config is in `~/.var/app/io.github.astrovm.QtScrcpy/config/qtscrcpy/`.
+ADB keys are stored under each app's private `data/android/` directory.
+
+Enable **USB debugging** on Android and approve the computer's authorization
+prompt. The apps need network access for wireless ADB and the shared local ADB
+server, and device access for USB debugging. `--device=all` also exposes other
+host devices because upstream ADB does not use Flatpak's USB portal. Neither app
+has permission to execute arbitrary commands on the host. A running host ADB
+server can be reused; its device list and authorization keys are owned by that
+server. If the device shows a permissions error, install your distribution's
+Android udev rules on the host. A Flatpak cannot supply host udev rules.
+
+These upstream releases provide only x86_64 Linux binaries. ARM64 support needs
+separate source builds. Android can refuse removal of protected system apps;
+UAD-ng reports the ADB error, and its disable mode is an alternative where the
+device permits it. QtScrcpy's **install sndcpy** and audio controls require
+the external sndcpy/VLC setup; they are outside this package's supported scope.
+
+## Host bridge
+
+[Flatpak's device permission](https://docs.flatpak.org/en/latest/sandbox-permissions.html)
+does not grant root privileges. Etcher and Ventoy use `org.freedesktop.Flatpak` host
+execution with the user's explicit Polkit approval. This permission allows
+host execution, so these packages should not be treated as fully isolated apps.
+No persistent root service, setuid executable, or passwordless policy is installed.
+
+Etcher's UI runs inside Flatpak using [Zypak](https://github.com/refi64/zypak).
+Its upstream `etcher-util` writer is copied to a private temporary directory
+under the app's cache. A bridge asks host `pkexec` to run that writer. The bridge
+accepts only the argument format generated by this pinned Etcher release and
+passes arguments directly without evaluating upstream shell text. The recipe
+replaces the one `/usr/bin/pkexec` reference in Etcher's ASAR with the equal-length
+`/app/bin/pkexec` path, preserving ASAR offsets. The build also checks the upstream
+Linux elevation function against its reviewed checksum and stops if it changes.
+The same build patch validates image metadata before it reaches selection state,
+registers the response listener before sending a request, and reports unreadable
+images through Etcher's image-open dialog. Both reviewed expressions are checked
+before patching; changed upstream code stops publication. Equal-length replacements
+preserve ASAR offsets, and the recipe refreshes the archive's integrity hashes.
+The exported desktop file registers the `etcher` URL scheme, so Etcher does not
+try to change host protocol settings from inside the sandbox.
+
+The launcher clears inherited AppImage variables and keeps Chromium's NSS database
+under the app's private data directory. The UI uses Wayland when available and
+falls back to X11. Image files under home and removable-media mounts are readable by the UI.
+Before changing `HOME`, the launcher resolves the desktop's standard folders.
+GTK receives a temporary config directory with absolute folder paths, while
+the other app settings link back to the persistent private config directory.
+Documents and Downloads shortcuts therefore keep pointing at the real folders.
+The launcher uses Electron's native file picker instead of the document portal,
+so image selection returns the original path used by both the sandboxed reader
+and the privileged host writer. Document-portal FUSE paths can be inaccessible
+to a separate host process. The package already grants read access to home,
+`/media`, and `/run/media`; the picker does not grant access to other locations.
+
+Drive discovery uses the runtime's `lsblk` through a small pipe wrapper. Node
+normally captures subprocess output with Unix sockets, which some host AppArmor
+`lsblk` profiles reject on inheritance. The wrapper gives `lsblk` ordinary pipes
+and `/dev/null` input, preserving its arguments, stdout, stderr and exit status.
+It keeps the host's AppArmor profile active and needs no extra sandbox permission.
+
+Ventoy's release archive includes a leading `./` and a version directory. The
+recipe removes both and checks the GUI and companion-file paths before export.
+Ventoy's upstream GUI requires root. The launcher copies its payload to private
+temporary app storage, then starts the upstream host GUI. Ventoy handles the
+Polkit prompt. It uses the host GTK 3 libraries and X11 or XWayland; install GTK 3
+on minimal hosts. Config and logs stay in the Flatpak app's config/cache directories.
+Payload copies are removed when either app exits, including failed launches.
+
+Both tools need host `pkexec`, a running system bus, and a desktop Polkit
+authentication agent. The Etcher helper also needs a compatible host glibc and
+C++ runtime. Use a modern Linux distribution; the Flatpak runtime does not
+provide libraries to processes that run on the host.
+
+## CI and publication
+
+**Build third-party apps** builds changed packages on its native architecture for relevant
+pull requests. The built Etcher helper is also tested with synthetic raw and gzip
+images, truncated gzip data, and a missing file, without opening block devices.
+The Android builds also check bundled ADB and binary/plugin dependencies inside
+the Flatpak runtime. Local Cua checks cover emulator mirroring/control and UAD-ng
+package discovery, denied removal, disable/enable and writable storage.
+Download the `.flatpak` artifacts and `SHA256SUMS` to test locally.
+PR builds never use signing secrets or publish the repository.
+
+After merge, updates are automatic. The workflow checks GitHub's latest stable
+releases for all four apps and the shared ADB dependency every day at **09:43 UTC (06:43 Argentina)**.
+GitHub may delay scheduled jobs. Relevant changes pushed to `main`, including
+the initial merge, also build and publish automatically.
+
+The resolver requires a normal `vX.Y.Z` release tag, one matching Linux asset,
+and a GitHub-provided SHA-256 digest. It updates the generated manifests and
+AppStream release versions/dates together. All upstream requests must succeed
+before any recipe changes. Prereleases, missing checksums, malformed releases,
+API failures, and downgrades stop the run and leave the published repository as it
+was. Unchanged daily checks skip the native builds and publication.
+
+Changed releases pass the script tests, 100% coverage gate, metadata validation,
+and the selected native builds before publication. A digest of each manifest
+and its local sources selects packages independently: changing Etcher leaves
+Ventoy’s Flatpak commit unchanged. QtScrcpy and UAD-ng recipe changes also build
+independently. Existing refs are kept during partial publication. Etcher's reviewed Linux elevation
+function must still match its compatibility checksum. A changed contract needs a
+maintainer to review and adapt the host bridge before automatic updates resume.
+
+Generated checksum-pinned recipes and launchers are uploaded as the
+`third-party-recipes` workflow artifact and saved under `usb-tools/` in `gh-pages`.
+The published `usb-tools/packages/releases.json` records the versions and source
+checksums and recipe digests used. Website refreshes and publication of other apps preserve this
+snapshot. Recipes checked into `main` remain the baseline for PR and local builds;
+automatic runs resolve the latest upstream release into their own build snapshot.
+
+To check for changes and test the latest releases without publishing:
+
+```sh
+gh workflow run packages.yml --repo astrovm/flatpak
+```
+
+To force a rebuild and publication of the latest releases:
+
+```sh
+gh workflow run packages.yml --repo astrovm/flatpak --ref main --field publish=true --field rebuild=true
+```
+
+Publication uses the existing `flatpak-signing` environment and its two GPG
+secrets. It verifies bundle checksums and refs, preserves existing apps, signs
+the imported commits, regenerates the site, and verifies it with a fresh Flatpak
+client before publishing. It shares the publishing queue with other repo writers.
+
+Add `--field update=false` to a manual run to build the checked-in baseline
+instead. Publishing is restricted to `main`. Runs from obsolete main revisions
+are rejected before publication. There is no extra token or manual PR merge for
+routine upstream updates; the existing signing secrets are reused.
+
+The first automatic publication starts after merge. Until it finishes, health
+checks can report missing refs for newly added apps. Successful automated builds do
+not verify physical USB writing or a complete desktop Polkit authentication flow.

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>astro's apps</title>
+    <meta name="description" content="Linux apps by astro. Install one with Flatpak and it stays up to date.">
+    <meta name="theme-color" content="#211f2b">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="astro's apps">
+    <meta property="og:description" content="Linux apps by astro. Install one with Flatpak and it stays up to date.">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="preload" href="/fonts/Nunito-Latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/FiraCode-Latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/styles.css?v=486d7cda0c29">
+    <script src="/oneko.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="site-header">
+        <a class="brand" href="/">
+          <span class="brand-bed" data-oneko-home><img class="brand-cat" src="/favicon.png" alt="" width="32" height="32"></span>
+          <span>astro's apps</span>
+        </a>
+        <a class="header-link" href="https://4st.li/">4st.li</a>
+      </header>
+
+      <section class="hero">
+        <h1>Apps for Linux</h1>
+        <p class="lede">Install one and it updates with the rest of your system.</p>
+      </section>
+
+      <section class="catalog" aria-label="Apps">
+<section class="catalog-group" aria-label="My apps"><h2 class="catalog-heading">My apps</h2>
+<div class="catalog-list">
+          <a class="app-card" href="/apps/io.github.astrovm.AdventureMods/install/">
+            <div class="app-shot"><img src="/apps/io.github.astrovm.AdventureMods/screenshot.webp" alt="Adventure Mods screenshot"></div>
+            <div class="app-card-body">
+              <img class="app-icon" src="/apps/io.github.astrovm.AdventureMods/icon.svg" alt="">
+              <div class="app-card-text">
+                <h2>Adventure Mods</h2>
+                <p>The easiest way to manage Sonic Adventure mods on Linux.</p>
+              </div>
+              <span class="app-card-cta">Install</span>
+            </div>
+          </a>
+          <a class="app-card" href="/apps/io.github.astrovm.PkgDeck/install/">
+            <div class="app-shot"><img src="/apps/io.github.astrovm.PkgDeck/screenshot.webp" alt="PkgDeck screenshot"></div>
+            <div class="app-card-body">
+              <img class="app-icon" src="/apps/io.github.astrovm.PkgDeck/icon.svg" alt="">
+              <div class="app-card-text">
+                <h2>PkgDeck</h2>
+                <p>Manage software from one fast GUI and CLI.</p>
+              </div>
+              <span class="app-card-cta">Install</span>
+            </div>
+          </a>
+</div></section>
+<section class="catalog-group" aria-label="Third-party apps"><h2 class="catalog-heading">Third-party apps</h2>
+<p class="catalog-note">Unofficial Flatpak packages maintained by astro.</p>
+<div class="catalog-list">
+          <a class="app-card" href="/apps/io.github.astrovm.Etcher/install/">
+            
+            <div class="app-card-body">
+              <img class="app-icon" src="/apps/io.github.astrovm.Etcher/icon.png" alt="">
+              <div class="app-card-text">
+                <h2>balenaEtcher</h2>
+                <p>Flash OS images to USB drives and SD cards.</p>
+              </div>
+              <span class="app-card-cta">Install</span>
+            </div>
+          </a>
+          <a class="app-card" href="/apps/io.github.astrovm.Ventoy/install/">
+            
+            <div class="app-card-body">
+              <img class="app-icon" src="/apps/io.github.astrovm.Ventoy/icon.png" alt="">
+              <div class="app-card-text">
+                <h2>Ventoy</h2>
+                <p>Boot multiple ISO images from one USB drive.</p>
+              </div>
+              <span class="app-card-cta">Install</span>
+            </div>
+          </a>
+          <a class="app-card" href="/apps/io.github.astrovm.QtScrcpy/install/">
+            
+            <div class="app-card-body">
+              <img class="app-icon" src="/apps/io.github.astrovm.QtScrcpy/icon.png" alt="">
+              <div class="app-card-text">
+                <h2>QtScrcpy</h2>
+                <p>Display and control Android devices on your desktop.</p>
+              </div>
+              <span class="app-card-cta">Install</span>
+            </div>
+          </a>
+          <a class="app-card" href="/apps/io.github.astrovm.UADng/install/">
+            
+            <div class="app-card-body">
+              <img class="app-icon" src="/apps/io.github.astrovm.UADng/icon.png" alt="">
+              <div class="app-card-text">
+                <h2>UAD-ng</h2>
+                <p>Manage unwanted system apps on Android devices.</p>
+              </div>
+              <span class="app-card-cta">Install</span>
+            </div>
+          </a>
+</div></section>
+      </section>
+
+      <details class="terminal">
+        <summary>Using the terminal?</summary>
+        <div class="command-row">
+          <pre><code>flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo</code></pre>
+          <button
+            class="copy-button"
+            type="button"
+            data-copy="flatpak remote-add --if-not-exists astrovm https://flatpak.4st.li/astrovm.flatpakrepo"
+          >
+            Copy
+          </button>
+        </div>
+      </details>
+    </main>
+    <script>
+      document.querySelectorAll("[data-copy]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+          } catch {
+            const field = document.createElement("textarea");
+            field.value = button.dataset.copy;
+            document.body.append(field);
+            field.select();
+            document.execCommand("copy");
+            field.remove();
+          }
+          button.textContent = "Copied ♡";
+          setTimeout(() => {
+            button.textContent = "Copy";
+          }, 2000);
+        });
+      });
+    </script>
+  </body>
+</html>
