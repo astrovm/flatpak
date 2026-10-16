@@ -408,7 +408,7 @@
       this.el.style.backgroundPosition = `${sprite[0] * SIZE}px ${sprite[1] * SIZE}px`;
     }
 
-    // Reading help still talks on articles (force), chatter doesn't.
+    // Only for clicks and reading help (force), never on its own.
     say(text, force = false) {
       if ((quiet() && !force) || away) return;
       const bubble = document.createElement("span");
@@ -496,7 +496,6 @@
         if (!dragged && Math.hypot(event.clientX - held.x, event.clientY - held.y) > 4) {
           dragged = true;
           this.el.classList.add("oneko-held");
-          this.say(random(["!", "mrrp?!", "nya?!"]));
         }
         if (!dragged) return;
         parked = false;
@@ -594,7 +593,6 @@
       setTimeout(() => this.el.classList.remove("oneko-landed"), 300);
       // Let it finish grooming, even on an article.
       invitedUntil = Date.now() + 2500;
-      if (Math.random() < 0.5) this.say(random(["hmph", "(=｀ェ´=)", "again!"]));
       this.start({
         kind: "groom",
         frames: 18,
@@ -619,7 +617,7 @@
         return;
       }
       this.drop();
-      this.say(countPet() || "purrrr ♡");
+      countPet();
       window.dispatchEvent(new CustomEvent("oneko:purr"));
     }
 
@@ -1013,11 +1011,7 @@
         where: () => (Date.now() > until ? { sx: this.x, sy: this.y } : { sx: fly.x, sy: fly.y + 14 }),
         act: (frame) => {
           this.setSprite("scratchWallN", frame);
-          if (frame === 1) {
-            const missed = Date.now() > until;
-            fly.leave();
-            this.say(missed ? "next time... (=ↀωↀ=)" : random(["!!", "so close (=ↀωↀ=)", "mrrrow!"]));
-          }
+          if (frame === 1) fly.leave();
         },
       });
     }
@@ -1039,9 +1033,6 @@
         stubborn: true,
         where: () => ({ sx: bx, sy: by + 5 }),
         act: (frame) => {
-          if (frame === 2) {
-            this.say("if i fits, i sits");
-          }
           if (frame > 60 && frame < 140) {
             this.setSprite("sleeping", Math.floor(frame / 4));
           } else {
@@ -1077,7 +1068,6 @@
           if (frame === 4) {
             friend.meet(tag ? "tag" : "boop");
             puff("♡", "oneko-heart", this.x - side * 13, this.y - SIZE / 2);
-            this.say(tag ? "tag! you're it" : random(["boop", "hi friend", "mrrp ♡"]));
           }
         },
         then: () => tag && this.flee(friend),
@@ -1129,7 +1119,6 @@
       if (quiet() || parked || this.held || this.plan?.stubborn) {
         return;
       }
-      this.say(random(["mrrp? ♡", "hi!", "=^.^="]));
       const side = this.x < friend.x ? "E" : "W";
       this.start({ kind: "greet", frames: 8, where: () => ({ sx: this.x, sy: this.y }), act: () => this.setSprite(side, 0) });
     }
@@ -1139,14 +1128,12 @@
       if (quiet() || parked || this.held || this.plan?.stubborn) {
         return;
       }
-      this.say("!");
       this.chase(() => (friend.el.isConnected ? friend : null), 4000);
     }
 
     // Someone new showed up. Sometimes it goes over right away.
     noticed(friend) {
       if (!quiet() && !parked && !this.held && !this.plan && Math.random() < 0.5) {
-        this.say("!");
         this.visit(friend);
       }
     }
@@ -1205,7 +1192,6 @@
           if (frame === 12) {
             treat.el.remove();
             puff("♡", "oneko-heart", this.x, this.y - SIZE / 2);
-            this.say("nom nom ♡");
             window.dispatchEvent(new CustomEvent("oneko:nom"));
           }
         },
@@ -1249,7 +1235,6 @@
       const spot = pointer || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       this.giveBack();
       this.drop();
-      this.say("!");
       this.idleTime = 0;
       return this.start({
         kind: "come",
@@ -1257,7 +1242,6 @@
         speed: 22,
         where: () => ({ sx: spot.x, sy: spot.y }),
         act: () => {},
-        then: () => this.say(random(["mrrp?", "nya~"])),
       });
     }
 
@@ -1774,23 +1758,6 @@
     });
   }
 
-  // Say hi to people who come back, after a while away or after switching tabs.
-  function greet() {
-    const seen = memory.get("seen", 0);
-    memory.set("seen", Date.now());
-    if (!reading() && seen && Date.now() - seen > 6 * 60 * 60 * 1000 && !lateNight) {
-      setTimeout(() => cats[0].say("welcome back ♡"), 2000);
-    }
-    let leftAt = 0;
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        leftAt = Date.now();
-      } else if (!reading() && leftAt && Date.now() - leftAt > 10000 && !parked) {
-        cats.forEach((cat) => cat.say("you're back! ♡"));
-      }
-    });
-  }
-
   // Keyboard secrets.
 
   function listenForSecrets() {
@@ -1823,10 +1790,7 @@
   function startNyan() {
     invite();
     nyanUntil = Date.now() + 8000;
-    cats.forEach((cat) => {
-      cat.distract();
-      cat.say("nyan~");
-    });
+    cats.forEach((cat) => cat.distract());
   }
 
   function addFriend() {
@@ -1909,17 +1873,12 @@
     }
     listenForSecrets();
     listenForSelections();
-    greet();
     setInterval(() => {
       cats.forEach((cat) => cat.frame());
       if (yarn) {
         yarn.el.hidden = away || yarn.gone || quiet() || !roomy() && !yarn.drag && !yarn.interesting() && !yarn.rolling;
       }
     }, TICK);
-
-    if (lateNight && !reading()) {
-      setTimeout(() => cats[0].say("*yawn*"), 3000);
-    }
   }
 
   function setHat(name) {
