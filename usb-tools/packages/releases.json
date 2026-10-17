@@ -1,0 +1,26 @@
+{
+  "etcher": {
+    "version": "2.1.7",
+    "sha256": "6602dc2195f422daf7c5bc3eaf0eaff1def7ccd8aba0cd9b36e8966b4e0e6d16",
+    "recipe_sha256": "40ee588590b68367b2a64a874f23cf803d6ad309b4bbfa66238a58fb6f28627b"
+  },
+  "ventoy": {
+    "version": "1.1.18",
+    "sha256": "d86ff9de63d94c8b8f1f6b14d23c55af4b88e8207bf2893890892a6a97b1ad54",
+    "recipe_sha256": "0fd7a6b904451349a4abcaa15fb8a587385f14f6cca8788ad7ddb7f8e593eaaf"
+  },
+  "qtscrcpy": {
+    "version": "4.2.1",
+    "sha256": "bf2241273e41fae7532a7b046cbace936369f3bffc7fedbd7344bdc2fcebe485",
+    "recipe_sha256": "4cb20098c1a91056be96a9b2228fb1ea43f57058fb1f6f589bacc85b956e678f"
+  },
+  "uadng": {
+    "version": "1.2.0",
+    "sha256": "980273195eb39ae43c776159252d67be0a5eea31faf88b600c2f9218cb099314",
+    "recipe_sha256": "abafe57520b66e0466aed03c4b739e492677b7e3dc0349e4e3cf92eef72636c7"
+  },
+  "adb": {
+    "version": "5.0.1",
+    "sha256": "9f969d30cc574816077edecda65719c1c70b0aee1df1ba5fa00779ac07b8fd6e"
+  }
+}

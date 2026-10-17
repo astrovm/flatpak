@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.astrovm.Etcher</id>
+  <name>balenaEtcher</name>
+  <summary>Flash operating system images to USB drives and SD cards</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <developer id="io.balena"><name>balena</name></developer>
+  <description>
+    <p>Flash operating system images to USB drives and SD cards.</p>
+    <p>This unofficial package is maintained by astrovm. Disk operations use a host bridge and require administrator approval through Polkit.</p>
+  </description>
+  <launchable type="desktop-id">io.github.astrovm.Etcher.desktop</launchable>
+  <url type="homepage">https://etcher.balena.io/</url>
+  <url type="bugtracker">https://github.com/astrovm/flatpak/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="2.1.7" date="2026-09-18"/></releases>
+</component>
