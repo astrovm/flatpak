@@ -191,6 +191,7 @@ jobs:
           validate_app_registry
           restore_repository_directories site/repo
           ostree fsck --quiet --repo=site/repo
+          nest_single_package_artifact bundles "$BUILD_MATRIX"
           verify_package_artifacts bundles "$BUILD_MATRIX"
           for artifact in bundles/*; do
             (cd "$artifact" && sha256sum --check SHA256SUMS)

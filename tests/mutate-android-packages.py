@@ -23,6 +23,8 @@ mutations = [
     ('accept empty saved publication', 'scripts/lib/package-versions.sh', ' and length > 0', '', 'test-package-updates.sh'),
     ('hash remote file as local', 'scripts/lib/package-versions.sh', ' and has("path")', '', 'test-package-updates.sh'),
     ('accept duplicate artifact refs', 'scripts/lib/package-versions.sh', 'select(length == 1)', 'select(length > 0)', 'test-package-updates.sh'),
+    ('nest multi-package downloads', 'scripts/lib/package-versions.sh', 'if length == 1', 'if length > 0', 'test-package-updates.sh'),
+    ('nest beside artifact folders', 'scripts/lib/package-versions.sh', ' -type d -print -quit', ' -name none -print -quit', 'test-package-updates.sh'),
 ]
 for suite in ['test-android-tools.sh', 'test-package-updates.sh']:
     subprocess.run(['bash', str(root / 'tests' / suite)], check=True, stdout=subprocess.DEVNULL)
