@@ -49,7 +49,7 @@ nest_single_package_artifact()
 {
   local directory=$1 matrix=$2 artifact
   [ -z "$(find "$directory" -mindepth 1 -maxdepth 1 -type d -print -quit)" ] || return 0
-  artifact=$(jq -er '.include | select(length == 1) | .[0] | .package + "-" + .arch' <<< "$matrix") || return 0
+  artifact=$(jq -er '.include | if length == 1 then .[0].package + "-" + .[0].arch else empty end' <<< "$matrix") || return 0
   mkdir "$directory/$artifact"
   find "$directory" -mindepth 1 -maxdepth 1 -type f -exec mv -t "$directory/$artifact" -- {} +
 }
