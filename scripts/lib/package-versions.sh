@@ -44,6 +44,16 @@ package_recipe_digest()
   } | sha256sum | cut -d ' ' -f 1
 }
 
+# download-artifact extracts a lone pattern match without its artifact folder.
+nest_single_package_artifact()
+{
+  local directory=$1 matrix=$2 artifact
+  [ -z "$(find "$directory" -mindepth 1 -maxdepth 1 -type d -print -quit)" ] || return 0
+  artifact=$(jq -er '.include | select(length == 1) | .[0] | .package + "-" + .arch' <<< "$matrix") || return 0
+  mkdir "$directory/$artifact"
+  find "$directory" -mindepth 1 -maxdepth 1 -type f -exec mv -t "$directory/$artifact" -- {} +
+}
+
 # Validate exactly the selected artifacts before modifying the signed repo.
 verify_package_artifacts()
 {

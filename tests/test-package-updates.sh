@@ -269,6 +269,23 @@ printf 'corrupt\n' >> "$work/bundles/etcher-x86_64/test.flatpak"
 expect_failure verify_package_artifacts "$work/bundles" "$matrix"
 rm "$work/bundles/etcher-x86_64/test.flatpak"
 expect_failure verify_package_artifacts "$work/bundles" "$matrix"
+# A lone build is downloaded flat, so nest it under its artifact name first.
+rm -rf "$work/bundles"
+mkdir -p "$work/bundles"
+printf 'bundle\n' > "$work/bundles/test.flatpak"
+(cd "$work/bundles" && sha256sum test.flatpak > SHA256SUMS)
+expect_failure verify_package_artifacts "$work/bundles" "$matrix"
+nest_single_package_artifact "$work/bundles" "$matrix"
+verify_package_artifacts "$work/bundles" "$matrix"
+nest_single_package_artifact "$work/bundles" "$matrix"
+verify_package_artifacts "$work/bundles" "$matrix"
+rm -rf "$work/bundles"
+mkdir -p "$work/bundles"
+printf 'bundle\n' > "$work/bundles/test.flatpak"
+two='{"include":[{"package":"etcher","arch":"x86_64"},{"package":"ventoy","arch":"x86_64"}]}'
+nest_single_package_artifact "$work/bundles" "$two"
+test -f "$work/bundles/test.flatpak"
+rm -rf "$work/bundles"
 
 # Execute the actual manifest patch against the reviewed upstream function.
 python3 - "$root" "$work" <<'PY'
