@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Ventoy
+Comment=Create a USB drive that boots multiple ISO images
+Exec=ventoy
+Icon=io.github.astrovm.Ventoy
+Terminal=false
+Categories=System;Utility;

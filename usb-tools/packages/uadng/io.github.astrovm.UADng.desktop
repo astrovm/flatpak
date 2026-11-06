@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=UAD-ng
+Comment=Manage unwanted system apps on Android devices
+Exec=uadng
+Icon=io.github.astrovm.UADng
+Terminal=false
+Categories=Utility;
+Keywords=Android;ADB;USB;
