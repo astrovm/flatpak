@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.astrovm.QtScrcpy</id>
+  <name>QtScrcpy</name>
+  <summary>Display and control Android devices on your desktop</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <developer id="io.github.barry-ran"><name>barry-ran</name></developer>
+  <description>
+    <p>Mirror Android screens, control devices, and record video over USB or Wi-Fi.</p>
+    <p>This unofficial package is maintained by astrovm. Enable USB debugging on your Android device and approve the computer when prompted.</p>
+  </description>
+  <launchable type="desktop-id">io.github.astrovm.QtScrcpy.desktop</launchable>
+  <url type="homepage">https://github.com/barry-ran/QtScrcpy</url>
+  <url type="bugtracker">https://github.com/astrovm/flatpak/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="4.2.1" date="2026-09-19"/></releases>
+</component>
