@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=QtScrcpy
+Comment=Display and control Android devices on your desktop
+Exec=qtscrcpy
+Icon=io.github.astrovm.QtScrcpy
+Terminal=false
+Categories=Utility;
+Keywords=Android;ADB;USB;
